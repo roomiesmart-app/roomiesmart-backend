@@ -1,0 +1,49 @@
+name: Construir y Subir Imagen Docker
+
+# Se ejecutará automáticamente cuando haya un PUSH o MERGE a estas ramas
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+env:
+  REGISTRY: ghcr.io
+  # Esto tomará automáticamente el nombre de tu repo: roomiesmart-app/roomiesmart-backend
+  IMAGE_NAME: ${{ github.repository }} 
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # Permiso vital para subir la imagen a GitHub Container Registry
+
+    steps:
+      - name: Descargar el código del repositorio
+        uses: actions/checkout@v4
+
+      - name: Iniciar sesión en GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          # GITHUB_TOKEN es automático, ¡no tienes que configurar nada!
+          password: ${{ secrets.GITHUB_TOKEN }} 
+
+      - name: Determinar la etiqueta (Tag) según la rama
+        id: vars
+        run: |
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "TAG=prod" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" = "refs/heads/dev" ]; then
+            echo "TAG=dev" >> $GITHUB_ENV
+          fi
+
+      - name: Construir y Subir la imagen Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Aquí etiqueta la imagen como :dev o :prod mágicamente
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.TAG }}
