@@ -7,6 +7,7 @@ if (!config.supabase.url || !config.supabase.serviceRoleKey) {
 }
 
 
+
 // 2. Creación de la conexión con privilegios de administrador
 export const supabase = createClient(
   config.supabase.url, 
