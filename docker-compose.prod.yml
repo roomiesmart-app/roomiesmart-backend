@@ -2,9 +2,6 @@ version: '3.8'
 
 services:
   api-prod:
-    build:
-      context: .
-      target: production
     image: paulchapi/roomiesmart-backend:prod
     container_name: roomiesmart_api_prod
     restart: always
@@ -15,3 +12,12 @@ services:
       - DATABASE_URL=${PROD_DATABASE_URL}
       - SUPABASE_URL=${PROD_SUPABASE_URL}
       - SUPABASE_KEY=${PROD_SUPABASE_KEY}
+
+  frontend:
+    image: paulchapi/roomiesmart-frontend:prod
+    container_name: roomiesmart_frontend_prod
+    ports:
+      - "80:80" # El puerto oficial para producción
+    depends_on:
+      - api-prod
+    restart: always
