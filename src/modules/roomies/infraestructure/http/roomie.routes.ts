@@ -3,7 +3,7 @@ import { RoomieController } from './roomie.controller.js';
 
 const router = Router();
 const roomieController = new RoomieController();
-
+// Routes
 // Deal: POST /api/v1/identity/register
 router.post('/api/v1/identity/register', roomieController.register.bind(roomieController));
 
