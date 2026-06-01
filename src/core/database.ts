@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { config } from './config.js';
 
-// 1. Validation of environment variables for Supabase credentials
-if (!config.supabase.url || !config.supabase.key) {
-  throw new Error("There are no Supabase credentials available (SUPABASE_URL o SUPABASE_ANON_KEY)");
+// 1. Validación de variables de entorno para Supabase (usando la Service Role Key)
+if (!config.supabase.url || !config.supabase.serviceRoleKey) {
+  throw new Error("No están configuradas las credenciales de Supabase (SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY)");
 }
 
-// 2. Creation of the database connection
-export const supabase = createClient(config.supabase.url, config.supabase.key);
+
+// 2. Creación de la conexión con privilegios de administrador
+export const supabase = createClient(
+  config.supabase.url, 
+  config.supabase.serviceRoleKey
+);
