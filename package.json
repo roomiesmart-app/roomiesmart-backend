@@ -19,15 +19,19 @@
   "type": "module",
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2",
+    "bcrypt": "^6.0.0",
+    "class-transformer": "^0.5.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "groq-sdk": "^1.2.1",
     "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
+    "reflect-metadata": "^0.2.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
