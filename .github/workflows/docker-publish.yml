@@ -38,9 +38,9 @@ jobs:
         if: github.ref_name == 'dev'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.AWS_HOST_DEV }}
+          host: ${{ secrets.AWS_HOST }}
           username: ubuntu
-          key: ${{ secrets.AWS_SSH_KEY_DEV }}
+          key: ${{ secrets.AWS_SSH_KEY}}
           script: |
             cd ~/roomiesmart-backend
             docker pull paulchapi/roomiesmart-backend:dev
@@ -51,9 +51,9 @@ jobs:
         if: github.ref_name == 'main'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.AWS_HOST_PROD }}
+          host: ${{ secrets.AWS_HOST }}
           username: ubuntu
-          key: ${{ secrets.AWS_SSH_KEY_PROD }}
+          key: ${{ secrets.AWS_SSH_KEY }}
           script: |
             cd ~/roomiesmart-production
             docker pull paulchapi/roomiesmart-backend:prod
