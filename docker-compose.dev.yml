@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   api-dev:
-    image: ghcr.io/roomiesmart-app/roomiesmart-backend:dev
+    build:
+      context: .
+      target: development
+    image: paulchapi/roomiesmart-backend:dev
     container_name: roomiesmart_api_dev
     restart: unless-stopped
     ports:

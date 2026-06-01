@@ -2,7 +2,10 @@ version: '3.8'
 
 services:
   api-prod:
-    image: ghcr.io/roomiesmart-app/roomiesmart-backend:prod
+    build:
+      context: .
+      target: production
+    image: paulchapi/roomiesmart-backend:prod
     container_name: roomiesmart_api_prod
     restart: always
     ports:
