@@ -7,6 +7,7 @@ services:
       target: development
     image: paulchapi/roomiesmart-backend:dev
     container_name: roomiesmart_api_dev
+    command: npm run dev
     restart: unless-stopped
     ports:
       - "3001:3000"
@@ -15,3 +16,12 @@ services:
       - DATABASE_URL=${DEV_DATABASE_URL}
       - SUPABASE_URL=${DEV_SUPABASE_URL}
       - SUPABASE_KEY=${DEV_SUPABASE_KEY}
+
+  frontend:
+    image: paulchapi/roomiesmart-frontend:dev
+    container_name: roomiesmart_frontend_dev
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-dev
+    restart: unless-stopped
