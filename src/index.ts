@@ -14,6 +14,6 @@ app.use(cors());
 // Endpoints
 app.use(roomieRoutes);
 
-app.listen(3000, () => {
-  console.log('Servidor corriendo en puerto 3000');
+app.listen(3000, '0.0.0.0', () => {
+  console.log('Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)');
 });
