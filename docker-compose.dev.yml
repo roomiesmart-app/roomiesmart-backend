@@ -15,7 +15,7 @@ services:
       - NODE_ENV=development
       - DATABASE_URL=${DEV_DATABASE_URL}
       - SUPABASE_URL=${DEV_SUPABASE_URL}
-      - SUPABASE_KEY=${DEV_SUPABASE_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${DEV_SUPABASE_SERVICE_ROLE_KEY}
 
   frontend:
     image: paulchapi/roomiesmart-frontend:dev
