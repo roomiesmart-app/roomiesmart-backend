@@ -1,5 +1,5 @@
 # --- ETAPA 1: BASE COMÚN ---
-FROM node:202-alpine AS base
+FROM node:22-alpine AS base
 WORKDIR /usr/src/app
 
 # Copiamos solo los archivos de dependencias primero (Mejora el caché de Docker)
