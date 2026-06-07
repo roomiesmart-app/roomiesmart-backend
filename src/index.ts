@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import express from 'express';
-import cors from 'cors'; // 1. Importa cors
+import cors from 'cors'; 
 import roomieRoutes from './modules/roomies/infraestructure/http/roomie.routes.js';
 
 const app = express();
