@@ -40,5 +40,11 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
+
+    // =========================================
+    // Habilitar Decoradores (Añadido para el DTO)
+    // =========================================
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   }
 }
