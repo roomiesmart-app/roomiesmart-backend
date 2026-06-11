@@ -2,7 +2,7 @@ name: Build and Deploy Backend
 
 on:
   push:
-    branches: [ "dev", "main", "qa" ] # Añadimos la rama qa al gatillo
+    branches: [ "dev", "main", "qa" ]
 
 jobs:
   build-and-push:
@@ -23,7 +23,7 @@ jobs:
           if [ "${{ github.ref_name }}" == "main" ]; then
             echo "TAG=prod" >> $GITHUB_ENV
           elif [ "${{ github.ref_name }}" == "qa" ]; then
-            echo "TAG=qa" >> $GITHUB_ENV # NUEVO: Etiqueta dinámica para QA
+            echo "TAG=qa" >> $GITHUB_ENV
           else
             echo "TAG=dev" >> $GITHUB_ENV
           fi
@@ -33,10 +33,11 @@ jobs:
         with:
           context: .
           push: true
+          target: production # NUEVO: Asegura que compile la etapa final del Dockerfile
           tags: paulchapi/roomiesmart-backend:${{ env.TAG }}
 
       # =========================================================
-      # DESPLIEGUE A DESARROLLO (Intacto - No se modificó nada)
+      # DESPLIEGUE A DESARROLLO
       # =========================================================
       - name: Deploy Backend to Dev Environment
         if: github.ref_name == 'dev'
@@ -51,13 +52,13 @@ jobs:
             docker compose -f docker-compose.dev.yml up -d api-dev
 
       # =========================================================
-      # DESPLIEGUE A PRODUCCIÓN (Intacto - No se modificó nada)
+      # DESPLIEGUE A PRODUCCIÓN
       # =========================================================
       - name: Deploy Backend to Production Environment
         if: github.ref_name == 'main'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.AWS_HOST }}
+          host: ${{ secrets.AWS_HOST_PROD }} # CORREGIDO: Apunta al servidor de PROD
           username: ubuntu
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
@@ -66,7 +67,7 @@ jobs:
             docker compose -f docker-compose.prod.yml up -d api-prod
 
       # =========================================================
-      # DESPLIEGUE A QA (NUEVO - Solo se ejecuta si estás en qa)
+      # DESPLIEGUE A QA
       # =========================================================
       - name: Deploy Backend to QA Environment
         if: github.ref_name == 'qa'
