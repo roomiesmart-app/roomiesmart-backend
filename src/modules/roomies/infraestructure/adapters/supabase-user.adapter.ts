@@ -1,6 +1,7 @@
 import { supabase } from '../../../../core/database.js';
 import type { IUserRepository } from '../../application/ports/user.repository.js';
 import { User } from '../../domain/user.model.js';
+import type { MatchmakingCardDto } from '../../domain/dtos/matchmaking-card.dto.js';
 
 export class SupabaseUserAdapter implements IUserRepository {
 
@@ -117,5 +118,50 @@ export class SupabaseUserAdapter implements IUserRepository {
     (user as any).id = data.id; 
     
     return user;
+  }
+
+  public async getProfilesForMatchmaking(): Promise<MatchmakingCardDto[]> {
+    // Do a single query that joins all the necessary tables to get all the data we need for the matchmaking cards in one go. This is more efficient than doing multiple queries for each user.
+    const { data, error } = await supabase
+      .from('users')
+      .select(`
+        id,
+        name,
+        ai_embedding,
+        user_profiles ( birth_city_id ),
+        user_lifestyle ( is_early_bird ),
+        user_social_preferences ( hobbies, pet_preference, smoking_preference ),
+        user_financial_preferences ( min_budget, max_budget, room_type )
+      `);
+
+    if (error) throw new Error(`Error obteniendo perfiles: ${error.message}`);
+    if (!data) return [];
+
+    // Mapping the raw data from the database into the MatchmakingCardDto format that our application uses. We also handle the case where Supabase might return related records as either an object or an array with one element, to ensure we always get the correct data.
+    return data.map((user: any) => {
+      // Supabase return relationships as either an object or an array with one element, depending on how the query is structured. We need to handle both cases to extract the related data correctly.
+      const profile = Array.isArray(user.user_profiles) ? user.user_profiles[0] : user.user_profiles;
+      const lifestyle = Array.isArray(user.user_lifestyle) ? user.user_lifestyle[0] : user.user_lifestyle;
+      const social = Array.isArray(user.user_social_preferences) ? user.user_social_preferences[0] : user.user_social_preferences;
+      const financial = Array.isArray(user.user_financial_preferences) ? user.user_financial_preferences[0] : user.user_financial_preferences;
+
+      return {
+        id: user.id,
+        fullName: user.name,
+        location: profile?.birth_city_id ? 'Ciudad Registrada' : 'Sin ubicación', 
+        habits: {
+          isEarlyBird: lifestyle?.is_early_bird ?? null,
+          hobbies: social?.hobbies || [],
+          petPreference: social?.pet_preference ?? null,
+          smokingPreference: social?.smoking_preference ?? null,
+        },
+        budget: {
+          min: financial?.min_budget ?? null,
+          max: financial?.max_budget ?? null,
+        },
+        roomType: financial?.room_type ?? null,
+        ai_embedding: user.ai_embedding ?? null
+      };
+    });
   }
 }
