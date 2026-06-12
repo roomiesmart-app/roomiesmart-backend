@@ -43,7 +43,15 @@ export class SupabaseUserAdapter implements IUserRepository {
       .select('id')
       .single();
 
-    if (userError) throw new Error(`DB Error insertando usuario: ${userError.message}`);
+    if (userError) {
+      // Duplicated email error handling (PostgreSQL error code 23505 for unique violation, or a message that includes 'duplicate key')
+      if (userError.code === '23505' || userError.message.includes('duplicate key')) {
+        throw new Error('El correo institucional ingresado ya se encuentra registrado. Por favor, inicia sesión.');
+      }
+      // if it's another type of error, throw a generic error message
+      throw new Error(`DB Error insertando usuario: ${userError.message}`);
+    }
+
     const userId = authUser.id;
 
     // 2. Obtain the IDs for the related catalog entries (like birth city and career) by either fetching existing ones or creating new ones if they don't exist
