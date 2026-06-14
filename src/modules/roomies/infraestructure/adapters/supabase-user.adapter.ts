@@ -120,6 +120,9 @@ export class SupabaseUserAdapter implements IUserRepository {
     return user;
   }
 
+  // =================================================================
+  // Matchmaking: Get Profiles
+  // =================================================================
   public async getProfilesForMatchmaking(): Promise<MatchmakingCardDto[]> {
     // Do a single query that joins all the necessary tables to get all the data we need for the matchmaking cards in one go. This is more efficient than doing multiple queries for each user.
     const { data, error } = await supabase
@@ -164,4 +167,76 @@ export class SupabaseUserAdapter implements IUserRepository {
       };
     });
   }
+
+ // saveProfileSettings method that updates the user's profile settings in the database, handling the logic of which tables to update based on the incoming data
+
+  public async updateProfileSettings(userId: string, data: any): Promise<void> {
+    // 1. Guardamos los Hobbies en la tabla Social
+    if (data.hobbies !== undefined) {
+      const { error: socialError } = await supabase
+        .from('user_social_preferences')
+        .upsert(
+          { user_id: userId, hobbies: data.hobbies },
+          { onConflict: 'user_id' } // Search about the conflict
+        );
+        
+      if (socialError) throw new Error(`Error guardando preferencias sociales: ${socialError.message}`);
+    }
+
+    // 2. Save the early bird preference in the Lifestyle table
+    if (data.isEarlyBird !== undefined) {
+      const { error: lifestyleError } = await supabase
+        .from('user_lifestyle')
+        .upsert(
+          { user_id: userId, is_early_bird: data.isEarlyBird },
+          { onConflict: 'user_id' } // 🔥
+        );
+        
+      if (lifestyleError) throw new Error(`Error guardando estilo de vida: ${lifestyleError.message}`);
+    }
+
+    // 3. Save the budget preferences in the Financial Preferences table
+    if (data.minBudget !== undefined || data.maxBudget !== undefined) {
+      const { error: financialError } = await supabase
+        .from('user_financial_preferences')
+        .upsert(
+          { user_id: userId, min_budget: data.minBudget, max_budget: data.maxBudget },
+          { onConflict: 'user_id' } // 🔥
+        );
+
+      if (financialError) throw new Error(`Error guardando presupuesto: ${financialError.message}`);
+    }
+  }
+
+  // Profile retrieval method that gets the user's profile settings from the database, combining data from multiple tables to reconstruct the full profile information in one go
+  public async getProfileSettings(userId: string): Promise<any> {
+    // Do a single query that joins all the necessary tables to get all the profile data in one go, instead of doing multiple queries for each aspect of the profile. This is more efficient and ensures we get a consistent snapshot of the user's profile at the time of the request.
+    const { data: socialData } = await supabase
+      .from('user_social_preferences')
+      .select('hobbies')
+      .eq('user_id', userId)
+      .single();
+
+    const { data: lifestyleData } = await supabase
+      .from('user_lifestyle')
+      .select('is_early_bird')
+      .eq('user_id', userId)
+      .single();
+
+    const { data: financialData } = await supabase
+      .from('user_financial_preferences')
+      .select('min_budget, max_budget')
+      .eq('user_id', userId)
+      .single();
+
+    // Answer: We return a combined object that includes all the relevant profile settings for the user, which can then be used by the controller to send back to the client. We also handle cases where some of the related records might not exist yet (e.g., if the user hasn't set their lifestyle preferences, we return null for those fields).
+    return {
+      userId,
+      isEarlyBird: lifestyleData?.is_early_bird ?? null,
+      hobbies: socialData?.hobbies ?? [],
+      minBudget: financialData?.min_budget ?? null,
+      maxBudget: financialData?.max_budget ?? null
+    };
+  }
+  
 }
