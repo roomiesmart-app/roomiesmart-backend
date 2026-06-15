@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  api-dev:
+    build:
+      context: .
+      target: development
+    image: paulchapi/roomiesmart-backend:dev
+    container_name: roomiesmart_api_dev
+    command: npm run dev
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=${DEV_DATABASE_URL}
+      - SUPABASE_URL=${DEV_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${DEV_SUPABASE_SERVICE_ROLE_KEY}
+
+  frontend:
+    image: paulchapi/roomiesmart-frontend:dev
+    container_name: roomiesmart_frontend_dev
+    ports:
+      - "8080:80"
+    depends_on:
+      - api-dev
+    restart: unless-stopped
