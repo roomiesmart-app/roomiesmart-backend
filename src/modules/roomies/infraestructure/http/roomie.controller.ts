@@ -5,6 +5,7 @@ import { SupabaseUserAdapter } from '../adapters/supabase-user.adapter.js';
 import { CreateUserDto } from '../../domain/dtos/create-user.dto.js'; 
 import { LoginUserUseCase } from '../../application/use-cases/login-user.js'; 
 import { LoginUserDto } from '../../domain/dtos/login-user.dto.js'; 
+import { logger } from '../../../../core/logger.js';
 
 // 🔥 IMPORTAMOS EL NUEVO CASO DE USO Y EL ADAPTADOR DE IA
 import { CalculateCompatibilityUseCase } from '../../application/use-cases/calculate-compatibility.js';
@@ -29,6 +30,7 @@ export class RoomieController {
       res.status(201).json(newUser);
       
     } catch (error: any) {
+      logger.error(error.message);
       // If the error is a validation error, we can return a 400 status code with the error message
       res.status(400).json({
         error: 'VALIDATION_ERROR',
@@ -47,6 +49,7 @@ export class RoomieController {
 
       res.status(200).json(response);
     } catch (error: any) {
+      logger.error(error.message);
       const status = error.message.includes('Auth Error') ? 401 : 400;
       res.status(status).json({
         error: status === 401 ? 'UNAUTHORIZED' : 'BAD_REQUEST',
