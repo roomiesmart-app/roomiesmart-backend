@@ -2,7 +2,8 @@ name: Build and Deploy Backend
 
 on:
   push:
-    branches: [ "dev", "main", "qa" ]
+    branches: [ "dev", "main" ] # QA removido para despliegue manual
+  workflow_dispatch: # Gatillo manual para QA
 
 jobs:
   build-and-push:
@@ -17,15 +18,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Determine environment tag
+      - name: Determine environment tag and build target
         id: environment
         run: |
           if [ "${{ github.ref_name }}" == "main" ]; then
             echo "TAG=prod" >> $GITHUB_ENV
+            echo "BUILD_TARGET=production" >> $GITHUB_ENV
           elif [ "${{ github.ref_name }}" == "qa" ]; then
             echo "TAG=qa" >> $GITHUB_ENV
+            echo "BUILD_TARGET=production" >> $GITHUB_ENV
           else
             echo "TAG=dev" >> $GITHUB_ENV
+            echo "BUILD_TARGET=development" >> $GITHUB_ENV
           fi
 
       - name: Build and push Docker image
@@ -33,7 +37,7 @@ jobs:
         with:
           context: .
           push: true
-          target: production # NUEVO: Asegura que compile la etapa final del Dockerfile
+          target: ${{ env.BUILD_TARGET }} # Selecciona la etapa correcta del Dockerfile
           tags: paulchapi/roomiesmart-backend:${{ env.TAG }}
 
       # =========================================================
@@ -49,7 +53,7 @@ jobs:
           script: |
             cd ~/roomiesmart-backend
             docker pull paulchapi/roomiesmart-backend:dev
-            docker compose -f docker-compose.dev.yml up -d api-dev
+            docker compose -f docker-compose.dev.yml up -d --remove-orphans api
 
       # =========================================================
       # DESPLIEGUE A PRODUCCIÓN
@@ -58,16 +62,16 @@ jobs:
         if: github.ref_name == 'main'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.AWS_HOST_PROD }} # CORREGIDO: Apunta al servidor de PROD
+          host: ${{ secrets.AWS_HOST_PROD }}
           username: ubuntu
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
             cd ~/roomiesmart-production
             docker pull paulchapi/roomiesmart-backend:prod
-            docker compose -f docker-compose.prod.yml up -d api-prod
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans api
 
       # =========================================================
-      # DESPLIEGUE A QA
+      # DESPLIEGUE A QA (Manual desde GitHub)
       # =========================================================
       - name: Deploy Backend to QA Environment
         if: github.ref_name == 'qa'
@@ -79,4 +83,4 @@ jobs:
           script: |
             cd ~/roomiesmart-qa
             docker pull paulchapi/roomiesmart-backend:qa
-            docker compose -f docker-compose.qa.yml up -d api-dev
+            docker compose -f docker-compose.qa.yml up -d --remove-orphans api
