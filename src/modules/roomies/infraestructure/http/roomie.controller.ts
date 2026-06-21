@@ -7,7 +7,7 @@ import { LoginUserUseCase } from '../../application/use-cases/login-user.js';
 import { LoginUserDto } from '../../domain/dtos/login-user.dto.js'; 
 import { logger } from '../../../../core/logger.js';
 
-// 🔥 IMPORTAMOS EL NUEVO CASO DE USO Y EL ADAPTADOR DE IA
+// Import the use case and adapter for the matchmaking functionality
 import { CalculateCompatibilityUseCase } from '../../application/use-cases/calculate-compatibility.js';
 import { GroqAiAdapter } from '../adapters/groq-ai.controller.js'; 
 
