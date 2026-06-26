@@ -12,7 +12,7 @@ export class GroqAiAdapter implements IAiService {
   public async rankCandidates(currentUser: MatchmakingCardDto, candidates: MatchmakingCardDto[]): Promise<any[]> {
     if (candidates.length === 0) return [];
 
-    // PROMPT ABOUT GROQ AI: We are asking the AI to rank candidates based on compatibility with the current user.
+    // Prompt for the AI model to rank candidates based on compatibility with the current user.
     const prompt = `
       Actúa como un algoritmo de matchmaking. Compara al "Usuario Principal" con la "Lista de Candidatos".
       
