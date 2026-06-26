@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { RoomieController } from './roomie.controller.js';
-import { requireClerkAuth } from '../../../../core/middlewares/clerk-auth.middleware.js';
+import { requireKindeAuth } from '../../../../core/middlewares/kinde-auth.middleware.js';
+
 
 const router = Router();
 const roomieController = new RoomieController();
@@ -18,7 +19,8 @@ router.get('/api/v1/identity/matchmaking-profiles', roomieController.getMatchmak
 // 1. Libre (Cualquiera puede preguntar si un correo existe)
 router.get('/api/v1/identity/check-status/:email', roomieController.checkStatus.bind(roomieController));
 
-// 2. PROTEGIDA POR CLERK (Solo entra si trae el Token JWT de Microsoft/Clerk)
-router.post('/api/v1/identity/onboarding', requireClerkAuth, roomieController.onboarding.bind(roomieController));
+// 2. PROTEGIDA POR KINDE (Solo entra si trae el Token JWT de Kinde)
+router.post('/onboarding', roomieController.onboarding);
+router.post('/onboarding', requireKindeAuth, roomieController.onboarding);
 
 export default router;
