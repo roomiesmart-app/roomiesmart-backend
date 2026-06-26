@@ -22,4 +22,7 @@ router.get('/api/v1/identity/check-status/:email', roomieController.checkStatus.
 // POST /api/v1/identity/onboarding — protegida por Kinde
 router.post('/api/v1/identity/onboarding', requireKindeAuth, roomieController.onboarding.bind(roomieController));
 
+// El Front disparará aquí apenas Kinde lo devuelva a la página
+router.get('/session', requireKindeAuth, roomieController.checkSession);
+
 export default router;

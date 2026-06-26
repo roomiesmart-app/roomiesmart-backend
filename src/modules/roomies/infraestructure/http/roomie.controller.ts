@@ -16,7 +16,6 @@ import { OnboardingRequestDto } from '../../domain/dtos/onboarding.dto.js';
 export class RoomieController {
   public async register(req: Request, res: Response): Promise<void> {
     try {
-      // Usamos plainToInstance para que los objetos anidados (Matrioshka) se validen bien
       const dto = plainToInstance(CreateUserDto, req.body);
       dto.validate();
 
@@ -58,7 +57,6 @@ export class RoomieController {
       const useCase = new CalculateCompatibilityUseCase(new SupabaseUserAdapter(), new GroqAiAdapter());
       const allMatches = await useCase.execute(currentUserId);
 
-      // Paginación por slice en memoria
       const startIndex = (page - 1) * limit;
       const endIndex = page * limit;
       const paginatedMatches = allMatches.slice(startIndex, endIndex);
@@ -70,16 +68,8 @@ export class RoomieController {
     }
   }
 
-  // ==========================================
-  // REQUERIMIENTO A: VERIFICACIÓN DE EXISTENCIA UCE
-  // GET /api/v1/identity/check-status/:email
-  // ==========================================
-  // ==========================================
-  // REQUERIMIENTO A: VERIFICACIÓN DE EXISTENCIA UCE
-  // ==========================================
   public async checkStatus(req: Request, res: Response): Promise<void> {
     try {
-      // 🛡️ ESCUDO ANTI-UNDEFINED: Si no mandaron correo, lo rebotamos con un 400
       if (!req.params.email) {
         res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta el parámetro email en la URL' });
         return;
@@ -106,17 +96,12 @@ export class RoomieController {
     }
   }
 
-  // ==========================================
-  // REQUERIMIENTO C: REGISTRO DEFINITIVO (ONBOARDING SSO vía Kinde)
-  // POST /api/v1/identity/onboarding
-  // ==========================================
   public async onboarding(req: Request, res: Response): Promise<void> {
     try {
       const dto = plainToInstance(OnboardingRequestDto, req.body);
       dto.validate();
       dto.identity.email = dto.identity.email.trim().toLowerCase();
 
-      // 🔥 REPARADO: Protegido con optional chaining por si falla el middleware
       const tokenExternalId = (req as any).auth?.externalId;
 
       if (!tokenExternalId || dto.identity.externalId !== tokenExternalId) {
@@ -130,7 +115,6 @@ export class RoomieController {
         return;
       }
 
-      // 🔥 REPARADO: Instanciamos a Supabase directamente dentro del método
       const adapter = new SupabaseUserAdapter();
       const newUser = await adapter.saveOnboardingUser(dto);
 
@@ -142,6 +126,37 @@ export class RoomieController {
     } catch (error: any) {
       logger.error(`Error en Onboarding Kinde: ${error.message}`);
       res.status(400).json({ error: 'BAD_REQUEST', message: error.message });
+    }
+  }
+
+  // ==========================================
+  // REQUERIMIENTO: VERIFICACIÓN DE SESIÓN (GET /session)
+  // ==========================================
+  public async checkSession(req: Request, res: Response): Promise<void> {
+    const { email } = (req as any).auth; // 🔥 Ahora usamos estrictamente el email
+
+    try {
+      if (!email) {
+        res.status(400).json({ status: "error", message: "El token JWT no contiene un email." });
+        return;
+      }
+
+      const adapter = new SupabaseUserAdapter();
+      const userExists = await adapter.findByEmail(email); // 🔥 Cumpliendo tu contrato oficial
+
+      if (!userExists) {
+        res.status(404).json({ 
+          status: "not_registered",
+          message: "El usuario se autenticó en Kinde pero no existe en RoomieSmart." 
+        });
+        return;
+      }
+
+      res.status(200).json({ status: "ok" });
+
+    } catch (error: any) {
+      logger.error(`Error en checkSession: ${error.message}`);
+      res.status(500).json({ error: error.message });
     }
   }
 }

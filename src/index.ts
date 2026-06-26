@@ -11,9 +11,9 @@ const app = express();
 // Middlewares
 app.use(express.json());
 
-
 const allowedOrigins = [
   'http://localhost:5173', // Local with Vite
+  'http://localhost:3000',
   
   'http://52.7.189.106', // Dev
   'http://52.7.189.106:8080', // Dev 8080
@@ -24,15 +24,17 @@ const allowedOrigins = [
   
   'http://3.208.173.154', // 🚀 IP cruda de Prod
   'http://roomiesmartprod.programacionwebuce.net', // Domain Prod (Nginx HTTP)
-  'https://roomiesmartprod.programacionwebuce.net' // Domain Prod (Cloudflare HTTPS)
-];
+  'https://roomiesmartprod.programacionwebuce.net', // Domain Prod (Cloudflare HTTPS)
+
+  // Orígenes dinámicos inyectados vía variables de entorno (.env)
+  process.env.CLIENT_ORIGIN
+].filter(Boolean) as string[];
 
 const corsOptions: CorsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      
       logger.warn(`Intento de acceso bloqueado por CORS desde el origen: ${origin}`);
       callback(new Error('Bloqueado por CORS: Origen no autorizado'));
     }
