@@ -11,7 +11,6 @@ import { logger } from '../../../../core/logger.js';
 import { CalculateCompatibilityUseCase } from '../../application/use-cases/calculate-compatibility.js';
 import { GroqAiAdapter } from '../adapters/groq-ai.controller.js'; 
 
-// 🔥 IMPORT REPARADO: El DTO de Onboarding de Microsoft
 import { OnboardingRequestDto } from '../../domain/dtos/onboarding.dto.js';
 
 export class RoomieController {
@@ -108,12 +107,13 @@ export class RoomieController {
   }
 
   // ==========================================
-  // REQUERIMIENTO C: REGISTRO DEFINITIVO (ONBOARDING SSO)
+  // REQUERIMIENTO C: REGISTRO DEFINITIVO (ONBOARDING SSO vía Kinde)
   // POST /api/v1/identity/onboarding
   // ==========================================
   public async onboarding(req: Request, res: Response): Promise<void> {
     try {
       const dto = plainToInstance(OnboardingRequestDto, req.body);
+      dto.validate();
       dto.identity.email = dto.identity.email.trim().toLowerCase();
 
       // 🔥 REPARADO: Protegido con optional chaining por si falla el middleware
@@ -135,12 +135,12 @@ export class RoomieController {
       const newUser = await adapter.saveOnboardingUser(dto);
 
       res.status(201).json({
-        message: 'Registro exitoso vía Microsoft SSO',
+        message: 'Registro exitoso vía Kinde SSO',
         userId: newUser.id
       });
 
     } catch (error: any) {
-      logger.error(`Error en Onboarding SSO: ${error.message}`);
+      logger.error(`Error en Onboarding Kinde: ${error.message}`);
       res.status(400).json({ error: 'BAD_REQUEST', message: error.message });
     }
   }

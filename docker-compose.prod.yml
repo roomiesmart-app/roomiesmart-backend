@@ -12,6 +12,7 @@ services:
       - DATABASE_URL=${PROD_DATABASE_URL}
       - SUPABASE_URL=${PROD_SUPABASE_URL}
       - SUPABASE_KEY=${PROD_SUPABASE_KEY}
+      - KINDE_ISSUER_URL=${PROD_KINDE_ISSUER_URL}
 
   frontend:
     image: paulchapi/roomiesmart-frontend:prod
