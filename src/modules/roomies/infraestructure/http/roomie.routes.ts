@@ -19,8 +19,7 @@ router.get('/api/v1/identity/matchmaking-profiles', roomieController.getMatchmak
 // 1. Libre (Cualquiera puede preguntar si un correo existe)
 router.get('/api/v1/identity/check-status/:email', roomieController.checkStatus.bind(roomieController));
 
-// 2. PROTEGIDA POR KINDE (Solo entra si trae el Token JWT de Kinde)
-router.post('/onboarding', roomieController.onboarding);
-router.post('/onboarding', requireKindeAuth, roomieController.onboarding);
+// POST /api/v1/identity/onboarding — protegida por Kinde
+router.post('/api/v1/identity/onboarding', requireKindeAuth, roomieController.onboarding.bind(roomieController));
 
 export default router;

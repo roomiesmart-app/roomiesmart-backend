@@ -108,16 +108,16 @@ export class SupabaseUserAdapter implements IUserRepository {
   }
 
   // =================================================================
-  // NUEVO: Guardar usuario federado (Microsoft SSO Onboarding)
+  // Guardar usuario federado (Kinde SSO Onboarding)
   // =================================================================
   public async saveOnboardingUser(dto: any): Promise<any> {
-    // 1. Insertamos en users con un hash centinela que indica que es cuenta SSO
     const { data: authUser, error: userError } = await supabase
       .from('users')
       .insert({
         name: dto.profile.fullName,
         email: dto.identity.email,
-        password_hash: 'SSO_MICROSOFT_FEDERATED_USER', // <--- Clave fantasma
+        kinde_external_id: dto.identity.externalId,
+        password_hash: 'SSO_KINDE_FEDERATED_USER',
         created_at: new Date().toISOString()
       })
       .select('id, email')
