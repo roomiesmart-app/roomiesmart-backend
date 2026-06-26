@@ -1,8 +1,7 @@
 import type { Request, Response, NextFunction } from 'express';
-import { jwtVerify } from '@kinde/jwt-validator'; // 🔥 Ahora sí: El paquete oficial de APIs
+import { jwtVerify } from '@kinde/jwt-validator';
 import { logger } from '../logger.js';
 
-// Le pasamos tu dominio oficial de Kinde
 const verifier = jwtVerify(process.env.KINDE_ISSUER_URL as string);
 
 export async function requireKindeAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -16,8 +15,9 @@ export async function requireKindeAuth(req: Request, res: Response, next: NextFu
     return;
   }
 
+  const token = authHeader.replace('Bearer ', '').trim();
+
   try {
-    // El verificador consulta las llaves públicas de Kinde en internet y valida la firma
     await new Promise<void>((resolve, reject) => {
       verifier(req as any, res as any, (err: any) => {
         if (err) return reject(err);
@@ -25,17 +25,22 @@ export async function requireKindeAuth(req: Request, res: Response, next: NextFu
       });
     });
 
-    // Kinde inyecta el token decodificado automáticamente dentro de req.user
-    const user = (req as any).user;
-    const externalId = user?.sub || user?.id;
+    // Decodificamos de forma segura para extraer el ID y el correo institucional
+    const base64Url = token.split('.')[1] as string;
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
+
+    const externalId = payload.sub || payload.id;
+    const email = payload.email;
 
     if (!externalId) {
       throw new Error('El token es auténtico pero no contiene un ID de sujeto (sub).');
     }
 
-    // Le pasamos el ID limpio a tu RoomieController intacto
+    // Pasamos el contexto limpio a la request de Express
     (req as any).auth = {
-      externalId: externalId
+      externalId: externalId,
+      email: email
     };
 
     next();

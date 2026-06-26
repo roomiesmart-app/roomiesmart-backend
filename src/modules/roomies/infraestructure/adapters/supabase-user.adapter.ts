@@ -5,9 +5,6 @@ import type { MatchmakingCardDto } from '../../domain/dtos/matchmaking-card.dto.
 
 export class SupabaseUserAdapter implements IUserRepository {
 
-  // =================================================================
-  // Auxiliar function to get or create catalog entries (like cities or careers) and return their IDs
-  // =================================================================
   private async getOrCreateCatalogId(tableName: string, nameValue: string | undefined): Promise<string | null> {
     if (!nameValue) return null;
     
@@ -26,9 +23,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     return data.id;
   }
 
-  // =================================================================
-  // Save normal (con contraseña)
-  // =================================================================
   public async save(user: User): Promise<void> {
     const { data: authUser, error: userError } = await supabase
       .from('users')
@@ -85,7 +79,7 @@ export class SupabaseUserAdapter implements IUserRepository {
   }
 
   // =================================================================
-  // FindByEmail (Sirve para el login normal y para el check-status de UCE)
+  // FindByEmail (Sirve para check-status, login, y para GET /session)
   // =================================================================
   public async findByEmail(email: string): Promise<User | null> {
     const { data, error } = await supabase
@@ -107,9 +101,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     return user;
   }
 
-  // =================================================================
-  // Guardar usuario federado (Kinde SSO Onboarding)
-  // =================================================================
   public async saveOnboardingUser(dto: any): Promise<any> {
     const { data: authUser, error: userError } = await supabase
       .from('users')
@@ -132,11 +123,9 @@ export class SupabaseUserAdapter implements IUserRepository {
 
     const userId = authUser.id;
 
-    // 2. Resolvemos los catálogos usando tu propia función privada
     const cityId = await this.getOrCreateCatalogId('cities', dto.profile.birthCity);
     const careerId = await this.getOrCreateCatalogId('careers', dto.profile.career);
 
-    // 3. Guardamos su perfil inicial
     const { error: profileError } = await supabase
       .from('user_profiles')
       .insert({
@@ -145,7 +134,7 @@ export class SupabaseUserAdapter implements IUserRepository {
         gender: dto.profile.gender,
         birth_city_id: cityId,
         career_id: careerId,
-        semester: dto.profile.currentSemester?.toString() // Casteado a string por si acaso
+        semester: dto.profile.currentSemester?.toString()
       });
 
     if (profileError) {
@@ -155,9 +144,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     return authUser;
   }
 
-  // =================================================================
-  // Matchmaking: Get Profiles
-  // =================================================================
   public async getProfilesForMatchmaking(): Promise<MatchmakingCardDto[]> {
     const { data, error } = await supabase
       .from('users')
