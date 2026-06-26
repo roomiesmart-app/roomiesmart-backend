@@ -5,16 +5,11 @@ import type { MatchmakingCardDto } from '../../domain/dtos/matchmaking-card.dto.
 
 export class SupabaseUserAdapter implements IUserRepository {
 
-  // =================================================================
-  // Auxiliar function to get or create catalog entries (like cities or careers) and return their IDs
-  // =================================================================
   private async getOrCreateCatalogId(tableName: string, nameValue: string | undefined): Promise<string | null> {
     if (!nameValue) return null;
     
-    // 1. Search for the entry in the specified catalog table (cities or careers)
     let { data } = await supabase.from(tableName).select('id').ilike('name', nameValue).single();
     
-    // if it doesn't exist, create it and return the new ID
     if (!data) {
       const { data: newData, error } = await supabase
         .from(tableName)
@@ -28,11 +23,7 @@ export class SupabaseUserAdapter implements IUserRepository {
     return data.id;
   }
 
-  // =================================================================
-  // Save method that now handles the complex logic of inserting into multiple tables to represent the user and their preferences in a normalized way
-  // =================================================================
   public async save(user: User): Promise<void> {
-    // 1. Save on table "users" first to get the generated user ID, which is needed for all the related tables (profile, lifestyle, social preferences, financial preferences)
     const { data: authUser, error: userError } = await supabase
       .from('users')
       .insert({
@@ -45,21 +36,17 @@ export class SupabaseUserAdapter implements IUserRepository {
       .single();
 
     if (userError) {
-      // Duplicated email error handling (PostgreSQL error code 23505 for unique violation, or a message that includes 'duplicate key')
       if (userError.code === '23505' || userError.message.includes('duplicate key')) {
         throw new Error('El correo institucional ingresado ya se encuentra registrado. Por favor, inicia sesión.');
       }
-      // if it's another type of error, throw a generic error message
       throw new Error(`DB Error insertando usuario: ${userError.message}`);
     }
 
     const userId = authUser.id;
 
-    // 2. Obtain the IDs for the related catalog entries (like birth city and career) by either fetching existing ones or creating new ones if they don't exist
     const cityId = await this.getOrCreateCatalogId('cities', user.preferences?.profile?.birthCity);
     const careerId = await this.getOrCreateCatalogId('careers', user.preferences?.profile?.career);
 
-    // 3. Save the user profile, lifestyle preferences, social preferences, and financial preferences in their respective tables, linking them with the user ID
     await supabase.from('user_profiles').insert({
       user_id: userId,
       age: user.preferences?.profile?.age,
@@ -69,7 +56,6 @@ export class SupabaseUserAdapter implements IUserRepository {
       semester: user.preferences?.profile?.semester
     });
 
-    // 4. Save LIFESTYLE
     await supabase.from('user_lifestyle').insert({
       user_id: userId,
       cleaning_frequency: user.preferences?.lifestyle?.cleaningFrequency,
@@ -77,7 +63,6 @@ export class SupabaseUserAdapter implements IUserRepository {
       use_common_areas_at_night: user.preferences?.lifestyle?.useCommonAreasAtNight
     });
 
-    // 5. Save SOCIAL PREFERENCES
     await supabase.from('user_social_preferences').insert({
       user_id: userId,
       pet_preference: user.preferences?.social?.petPreference,
@@ -85,7 +70,6 @@ export class SupabaseUserAdapter implements IUserRepository {
       social_level: user.preferences?.social?.socialLevel
     });
 
-    // 6. Save FINANCIAL PREFERENCES
     await supabase.from('user_financial_preferences').insert({
       user_id: userId,
       min_budget: user.preferences?.financial?.budgetRange?.min,
@@ -95,7 +79,7 @@ export class SupabaseUserAdapter implements IUserRepository {
   }
 
   // =================================================================
-  // FindByEmail method that retrieves the user by email and reconstructs the User entity.
+  // FindByEmail (Sirve para check-status, login, y para GET /session)
   // =================================================================
   public async findByEmail(email: string): Promise<User | null> {
     const { data, error } = await supabase
@@ -106,7 +90,6 @@ export class SupabaseUserAdapter implements IUserRepository {
 
     if (error || !data) return null;
 
-    
     const user = User.create(
       data.name, 
       data.email, 
@@ -114,17 +97,54 @@ export class SupabaseUserAdapter implements IUserRepository {
       {} as any 
     );
     
-    // Asign the ID from the database to the user entity (since the factory method doesn't know about the ID, we have to assign it manually here)
     (user as any).id = data.id; 
-    
     return user;
   }
 
-  // =================================================================
-  // Matchmaking: Get Profiles
-  // =================================================================
+  public async saveOnboardingUser(dto: any): Promise<any> {
+    const { data: authUser, error: userError } = await supabase
+      .from('users')
+      .insert({
+        name: dto.profile.fullName,
+        email: dto.identity.email,
+        kinde_external_id: dto.identity.externalId,
+        password_hash: 'SSO_KINDE_FEDERATED_USER',
+        created_at: new Date().toISOString()
+      })
+      .select('id, email')
+      .single();
+
+    if (userError) {
+      if (userError.code === '23505' || userError.message.includes('duplicate key')) {
+        throw new Error('El correo institucional ingresado ya se encuentra registrado. Por favor, inicia sesión.');
+      }
+      throw new Error(`Error BD insertando usuario SSO: ${userError.message}`);
+    }
+
+    const userId = authUser.id;
+
+    const cityId = await this.getOrCreateCatalogId('cities', dto.profile.birthCity);
+    const careerId = await this.getOrCreateCatalogId('careers', dto.profile.career);
+
+    const { error: profileError } = await supabase
+      .from('user_profiles')
+      .insert({
+        user_id: userId,
+        age: dto.profile.age,
+        gender: dto.profile.gender,
+        birth_city_id: cityId,
+        career_id: careerId,
+        semester: dto.profile.currentSemester?.toString()
+      });
+
+    if (profileError) {
+      throw new Error(`Error BD insertando perfil de Onboarding: ${profileError.message}`);
+    }
+
+    return authUser;
+  }
+
   public async getProfilesForMatchmaking(): Promise<MatchmakingCardDto[]> {
-    // Do a single query that joins all the necessary tables to get all the data we need for the matchmaking cards in one go. This is more efficient than doing multiple queries for each user.
     const { data, error } = await supabase
       .from('users')
       .select(`
@@ -140,9 +160,7 @@ export class SupabaseUserAdapter implements IUserRepository {
     if (error) throw new Error(`Error obteniendo perfiles: ${error.message}`);
     if (!data) return [];
 
-    // Mapping the raw data from the database into the MatchmakingCardDto format that our application uses. We also handle the case where Supabase might return related records as either an object or an array with one element, to ensure we always get the correct data.
     return data.map((user: any) => {
-      // Supabase return relationships as either an object or an array with one element, depending on how the query is structured. We need to handle both cases to extract the related data correctly.
       const profile = Array.isArray(user.user_profiles) ? user.user_profiles[0] : user.user_profiles;
       const lifestyle = Array.isArray(user.user_lifestyle) ? user.user_lifestyle[0] : user.user_lifestyle;
       const social = Array.isArray(user.user_social_preferences) ? user.user_social_preferences[0] : user.user_social_preferences;
@@ -168,49 +186,30 @@ export class SupabaseUserAdapter implements IUserRepository {
     });
   }
 
- // saveProfileSettings method that updates the user's profile settings in the database, handling the logic of which tables to update based on the incoming data
-
   public async updateProfileSettings(userId: string, data: any): Promise<void> {
-    // 1. Guardamos los Hobbies en la tabla Social
     if (data.hobbies !== undefined) {
       const { error: socialError } = await supabase
         .from('user_social_preferences')
-        .upsert(
-          { user_id: userId, hobbies: data.hobbies },
-          { onConflict: 'user_id' } // Search about the conflict
-        );
-        
+        .upsert({ user_id: userId, hobbies: data.hobbies }, { onConflict: 'user_id' });
       if (socialError) throw new Error(`Error guardando preferencias sociales: ${socialError.message}`);
     }
 
-    // 2. Save the early bird preference in the Lifestyle table
     if (data.isEarlyBird !== undefined) {
       const { error: lifestyleError } = await supabase
         .from('user_lifestyle')
-        .upsert(
-          { user_id: userId, is_early_bird: data.isEarlyBird },
-          { onConflict: 'user_id' } // 🔥
-        );
-        
+        .upsert({ user_id: userId, is_early_bird: data.isEarlyBird }, { onConflict: 'user_id' });
       if (lifestyleError) throw new Error(`Error guardando estilo de vida: ${lifestyleError.message}`);
     }
 
-    // 3. Save the budget preferences in the Financial Preferences table
     if (data.minBudget !== undefined || data.maxBudget !== undefined) {
       const { error: financialError } = await supabase
         .from('user_financial_preferences')
-        .upsert(
-          { user_id: userId, min_budget: data.minBudget, max_budget: data.maxBudget },
-          { onConflict: 'user_id' } // 🔥
-        );
-
+        .upsert({ user_id: userId, min_budget: data.minBudget, max_budget: data.maxBudget }, { onConflict: 'user_id' });
       if (financialError) throw new Error(`Error guardando presupuesto: ${financialError.message}`);
     }
   }
 
-  // Profile retrieval method that gets the user's profile settings from the database, combining data from multiple tables to reconstruct the full profile information in one go
   public async getProfileSettings(userId: string): Promise<any> {
-    // Do a single query that joins all the necessary tables to get all the profile data in one go, instead of doing multiple queries for each aspect of the profile. This is more efficient and ensures we get a consistent snapshot of the user's profile at the time of the request.
     const { data: socialData } = await supabase
       .from('user_social_preferences')
       .select('hobbies')
@@ -229,7 +228,6 @@ export class SupabaseUserAdapter implements IUserRepository {
       .eq('user_id', userId)
       .single();
 
-    // Answer: We return a combined object that includes all the relevant profile settings for the user, which can then be used by the controller to send back to the client. We also handle cases where some of the related records might not exist yet (e.g., if the user hasn't set their lifestyle preferences, we return null for those fields).
     return {
       userId,
       isEarlyBird: lifestyleData?.is_early_bird ?? null,
@@ -238,5 +236,4 @@ export class SupabaseUserAdapter implements IUserRepository {
       maxBudget: financialData?.max_budget ?? null
     };
   }
-  
 }
