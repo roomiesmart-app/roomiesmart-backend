@@ -1,7 +1,6 @@
 import { Type } from 'class-transformer';
-import 'reflect-metadata'; // Secure the metadata API for decorators
+import 'reflect-metadata'; 
 
-// 1. Convert each nested object into its own DTO class
 export class UserProfileDto {
   age!: number;
   gender!: string;
@@ -31,7 +30,7 @@ export class BudgetRangeDto {
 }
 
 export class FinancialPreferencesDto {
-  @Type(() => BudgetRangeDto) // this tells class-transformer to go deeper and transform the nested object into a BudgetRangeDto instance
+  @Type(() => BudgetRangeDto) 
   budgetRange!: BudgetRangeDto;
   
   roomType!: 'privada' | 'compartida';
@@ -54,13 +53,14 @@ export class NestedPreferencesDto {
   financial!: FinancialPreferencesDto;
 }
 
-// 2. The class that represents the entire payload for user creation, which includes all the nested preferences
 export class CreateUserDto {
   name!: string;
   email!: string;
-  password!: string;
+  
+  // 🔥 BLINDAJE 1: Ahora es opcional para soportar Kinde SSO
+  password?: string;
 
-  @Type(() => NestedPreferencesDto) // This says that the "preferences" property should be transformed into an instance of NestedPreferencesDto, which in turn has its own nested transformations
+  @Type(() => NestedPreferencesDto) 
   preferences!: NestedPreferencesDto;
 
   public validate(): void {
@@ -69,6 +69,11 @@ export class CreateUserDto {
   }
 
   private validatePassword(): void {
+    // 🔥 BLINDAJE 2: Si viene vacía (SSO Kinde), nos saltamos el test de símbolos
+    if (!this.password || this.password.trim() === '') {
+      return; 
+    }
+
     const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
     if (!passwordRegex.test(this.password)) {
       throw new Error('Validation Error: La contraseña debe tener al menos 8 caracteres y un símbolo especial.');
