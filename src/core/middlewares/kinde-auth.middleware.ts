@@ -1,8 +1,14 @@
 import type { Request, Response, NextFunction } from 'express';
-import { jwtVerify } from '@kinde/jwt-validator';
+import * as KindeValidator from '@kinde/jwt-validator';
 import { logger } from '../logger.js';
 
-const verifier = jwtVerify(process.env.KINDE_ISSUER_URL as string);
+
+console.log("--- ESTRUCTURA DE KINDE ---", KindeValidator); 
+
+const verifierFactory = (KindeValidator as any).jwtVerify || (KindeValidator as any).default || KindeValidator;
+
+// Inicializamos el validador
+const verifier = verifierFactory(process.env.KINDE_ISSUER_URL as string);
 
 export async function requireKindeAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const authHeader = req.headers.authorization;
@@ -10,12 +16,10 @@ export async function requireKindeAuth(req: Request, res: Response, next: NextFu
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ 
       error: 'UNAUTHORIZED', 
-      message: 'Acceso denegado: Falta el token de Kinde en el header Authorization.' 
+      message: 'Acceso denegado: Falta el token de Kinde.' 
     });
     return;
   }
-
-  const token = authHeader.replace('Bearer ', '').trim();
 
   try {
     await new Promise<void>((resolve, reject) => {
@@ -25,22 +29,16 @@ export async function requireKindeAuth(req: Request, res: Response, next: NextFu
       });
     });
 
-    // Decodificamos de forma segura para extraer el ID y el correo institucional
-    const base64Url = token.split('.')[1] as string;
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const payload = JSON.parse(Buffer.from(base64, 'base64').toString());
-
-    const externalId = payload.sub || payload.id;
-    const email = payload.email;
+    const user = (req as any).user;
+    const externalId = user?.sub || user?.id;
 
     if (!externalId) {
-      throw new Error('El token es auténtico pero no contiene un ID de sujeto (sub).');
+      throw new Error('El token es auténtico pero no contiene un ID de sujeto.');
     }
 
-    // Pasamos el contexto limpio a la request de Express
     (req as any).auth = {
       externalId: externalId,
-      email: email
+      email: user?.email
     };
 
     next();
@@ -48,7 +46,7 @@ export async function requireKindeAuth(req: Request, res: Response, next: NextFu
     logger.warn(`Intento de penetración con Token Kinde fallido: ${error.message}`);
     res.status(401).json({ 
       error: 'UNAUTHORIZED', 
-      message: 'Token de sesión de Kinde inválido o expirado. Vuelva a iniciar sesión.' 
+      message: 'Token de sesión inválido.' 
     });
   }
 }
