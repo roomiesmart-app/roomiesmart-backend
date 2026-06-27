@@ -56,28 +56,14 @@ export class NestedPreferencesDto {
 export class CreateUserDto {
   name!: string;
   email!: string;
-  
-  // 🔥 BLINDAJE 1: Ahora es opcional para soportar Kinde SSO
-  password?: string;
+  password?: string; // <--- Recibe el "" del Front y lo manda al vacío
 
   @Type(() => NestedPreferencesDto) 
   preferences!: NestedPreferencesDto;
 
   public validate(): void {
-    this.validatePassword();
+    // ¡ADIÓS VALIDATE PASSWORD!
     this.validateProfile();
-  }
-
-  private validatePassword(): void {
-    // 🔥 BLINDAJE 2: Si viene vacía (SSO Kinde), nos saltamos el test de símbolos
-    if (!this.password || this.password.trim() === '') {
-      return; 
-    }
-
-    const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-    if (!passwordRegex.test(this.password)) {
-      throw new Error('Validation Error: La contraseña debe tener al menos 8 caracteres y un símbolo especial.');
-    }
   }
 
   private validateProfile(): void {
