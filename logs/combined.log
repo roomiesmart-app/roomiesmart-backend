@@ -7,3 +7,5 @@
 [2026-06-22 14:11:43] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
 [2026-06-22 14:31:29] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
 [2026-06-22 14:36:28] WARN: Intento de penetración con Token JWT fallido: Invalid JWT form. A JWT consists of three parts separated by dots.
+[2026-06-26 16:14:02] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-06-27 00:16:44] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)

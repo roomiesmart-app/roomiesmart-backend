@@ -69,7 +69,7 @@ export class CreateUserDto {
   }
 
   private validatePassword(): void {
-    
+    // 🔥 BLINDAJE 2: Si viene vacía (SSO Kinde), nos saltamos el test de símbolos
     if (!this.password || this.password.trim() === '') {
       return; 
     }
