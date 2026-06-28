@@ -23,9 +23,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     return data.id;
   }
 
-  // =================================================================
-  // 1. GUARDADO TRADICIONAL (Manteniendo tu lógica original limpia)
-  // =================================================================
   public async save(user: User): Promise<void> {
     const { data: authUser, error: userError } = await supabase
       .from('users')
@@ -80,9 +77,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     });
   }
 
-  // =================================================================
-  // 2. GUARDADO ONBOARDING SSO KINDE (ARREGLADO: Ahora sí guarda todo)
-  // =================================================================
   public async saveOnboardingUser(dto: any): Promise<any> {
     const { data: authUser, error: userError } = await supabase
       .from('users')
@@ -107,7 +101,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     const cityId = await this.getOrCreateCatalogId('cities', dto.profile.birthCity);
     const careerId = await this.getOrCreateCatalogId('careers', dto.profile.career);
 
-    // Insertamos Perfil
     await supabase.from('user_profiles').insert({
       user_id: userId,
       age: dto.profile.age,
@@ -117,7 +110,6 @@ export class SupabaseUserAdapter implements IUserRepository {
       semester: dto.profile.currentSemester?.toString()
     });
 
-    // 🔥 FIX ARQUITECTÓNICO: Insertamos el resto de tablas obligatoriamente
     await supabase.from('user_lifestyle').insert({
       user_id: userId,
       cleaning_frequency: dto.lifestyle?.cleaningFrequency || 'semanal',
@@ -142,9 +134,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     return authUser;
   }
 
-  // =================================================================
-  // 3. CONSULTA PARA INTELIGENCIA ARTIFICIAL (ARREGLADO: Relaciones limpias)
-  // =================================================================
   public async getProfilesForMatchmaking(): Promise<MatchmakingCardDto[]> {
     const { data, error } = await supabase
       .from('users')
@@ -153,8 +142,8 @@ export class SupabaseUserAdapter implements IUserRepository {
         name,
         email,
         ai_embedding,
-        user_profiles ( birth_city_id ),
-        user_lifestyle ( is_early_bird ),
+        user_profiles ( birth_city_id, age, gender ),
+        user_lifestyle ( is_early_bird, cleaning_frequency ),
         user_social_preferences ( pet_preference, smoking_preference ),
         user_financial_preferences ( min_budget, max_budget, room_type ),
         user_hobbies_mapping (
@@ -175,23 +164,38 @@ export class SupabaseUserAdapter implements IUserRepository {
         ?.map((mapping: any) => mapping.hobbies?.name)
         .filter(Boolean) || [];
 
-      return {
+      const cardObj: any = {
         id: user.id,
         fullName: user.name || "Estudiante UCE",
         location: profile?.birth_city_id ? 'Quito, Ecuador' : 'Ubicación no especificada', 
-        habits: {
-          isEarlyBird: lifestyle?.is_early_bird ?? true,
-          hobbies: mappedHobbies.length > 0 ? mappedHobbies : ['Lectura', 'Videojuegos'],
-          petPreference: social?.pet_preference ?? 'No me molestan',
-          smokingPreference: social?.smoking_preference ?? 'No fumo',
-        },
-        budget: {
-          min: financial?.min_budget ?? 100,
-          max: financial?.max_budget ?? 250,
-        },
         roomType: financial?.room_type ?? 'privada',
+        preferences: {
+          profile: {
+            age: profile?.age ?? 21,
+            gender: profile?.gender ?? 'No especificado'
+          },
+          lifestyle: {
+            isEarlyBird: lifestyle?.is_early_bird ?? true,
+            cleaningFrequency: lifestyle?.cleaning_frequency ?? 'semanal',
+          },
+          social: {
+            hobbies: mappedHobbies.length > 0 ? mappedHobbies : ['Lectura', 'Videojuegos'],
+            musicGenres: ['Rock', 'Rap'],
+            petPreference: social?.pet_preference ?? 'No me molestan',
+            smokingPreference: social?.smoking_preference ?? 'No fumo',
+          },
+          financial: {
+            budgetRange: {
+              min: financial?.min_budget ?? 100,
+              max: financial?.max_budget ?? 250,
+            }
+          }
+        },
         ai_embedding: user.ai_embedding ?? null
       };
+
+      cardObj.email = user.email;
+      return cardObj as MatchmakingCardDto;
     });
   }
 

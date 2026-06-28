@@ -6,11 +6,8 @@ import { CreateUserDto } from '../../domain/dtos/create-user.dto.js';
 import { LoginUserUseCase } from '../../application/use-cases/login-user.js'; 
 import { LoginUserDto } from '../../domain/dtos/login-user.dto.js'; 
 import { logger } from '../../../../core/logger.js';
-
-// Matchmaking IA
 import { CalculateCompatibilityUseCase } from '../../application/use-cases/calculate-compatibility.js';
 import { GroqAiAdapter } from '../adapters/groq-ai.controller.js'; 
-
 import { OnboardingRequestDto } from '../../domain/dtos/onboarding.dto.js';
 
 export class RoomieController {
@@ -18,10 +15,8 @@ export class RoomieController {
     try {
       const dto = plainToInstance(CreateUserDto, req.body);
       dto.validate();
-
       const useCase = new RegisterUserUseCase(new SupabaseUserAdapter());
       const newUser = await useCase.execute(dto);
-
       res.status(201).json(newUser);
     } catch (error: any) {
       logger.error(error.message);
@@ -34,7 +29,6 @@ export class RoomieController {
       const dto = plainToInstance(LoginUserDto, req.body);
       const useCase = new LoginUserUseCase(new SupabaseUserAdapter());
       const response = await useCase.execute(dto);
-
       res.status(200).json(response);
     } catch (error: any) {
       logger.error(error.message);
@@ -43,27 +37,36 @@ export class RoomieController {
     }
   }
 
+  // =================================================================
+  // 🔥 MATCHMAKING BLINDADO CON DIAGNÓSTICO EN TIEMPO REAL
+  // =================================================================
   public async getMatchmakingCards(req: Request, res: Response): Promise<void> {
     try {
-      const currentUserId = req.query.userId as string;
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 4;
+      console.log("\n📢 [1/4] Petición POST recibida en el controlador!");
+      console.log("DEBUG Body:", JSON.stringify(req.body));
+      
+      const incomingId = req.body.userId;
+      const filters = req.body.filters || {};
 
-      if (!currentUserId) {
-        res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta el userId en la URL.' });
+      if (!incomingId) {
+        console.error("❌ Error: req.body.userId llegó vacío");
+        res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta el userId en el body.' });
         return;
       }
 
-      const useCase = new CalculateCompatibilityUseCase(new SupabaseUserAdapter(), new GroqAiAdapter());
-      const allMatches = await useCase.execute(currentUserId);
+      console.log("📢 [2/4] Instanciando repositorios y IA...");
+      const userAdapter = new SupabaseUserAdapter();
+      const aiAdapter = new GroqAiAdapter();
+      const useCase = new CalculateCompatibilityUseCase(userAdapter, aiAdapter);
 
-      const startIndex = (page - 1) * limit;
-      const endIndex = page * limit;
-      const paginatedMatches = allMatches.slice(startIndex, endIndex);
+      console.log("📢 [3/4] Ejecutando CalculateCompatibilityUseCase...");
+      const allMatches = await useCase.execute(incomingId, filters);
 
-      res.status(200).json(paginatedMatches);
+      console.log(`📢 [4/4] ¡Éxito! Devolviendo ${allMatches?.length || 0} cartas al frontend.`);
+      res.status(200).json(allMatches);
+
     } catch (error: any) {
-      console.error("Error en Matchmaking:", error);
+      console.error("🔥 EXPLOSIÓN EN EL CONTROLADOR DE MATCHMAKING:", error);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }
@@ -74,22 +77,14 @@ export class RoomieController {
         res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta el parámetro email en la URL' });
         return;
       }
-
       const email = (req.params.email as string).trim().toLowerCase();
-
       if (!email.endsWith('@uce.edu.ec')) {
-        res.status(403).json({ 
-          error: 'FORBIDDEN', 
-          message: 'El sistema está restringido exclusivamente a cuentas institucionales @uce.edu.ec' 
-        });
+        res.status(403).json({ error: 'FORBIDDEN', message: 'El sistema está restringido exclusivamente a cuentas institucionales @uce.edu.ec' });
         return;
       }
-
       const adapter = new SupabaseUserAdapter();
       const user = await adapter.findByEmail(email);
-
       res.status(200).json({ exists: !!user });
-
     } catch (error: any) {
       logger.error(`Error en checkStatus: ${error.message}`);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR' });
@@ -101,61 +96,39 @@ export class RoomieController {
       const dto = plainToInstance(OnboardingRequestDto, req.body);
       dto.validate();
       dto.identity.email = dto.identity.email.trim().toLowerCase();
-
       const tokenExternalId = (req as any).auth?.externalId;
 
       if (!tokenExternalId || dto.identity.externalId !== tokenExternalId) {
-        logger.warn(`¡ALERTA DE SUPLANTACIÓN! El usuario intentó registrar un ID distinto al del token JWT.`);
         res.status(403).json({ error: 'FORBIDDEN', message: 'Discrepancia de credenciales federadas.' });
         return;
       }
-
       if (!dto.identity.email.endsWith('@uce.edu.ec')) {
         res.status(403).json({ error: 'FORBIDDEN', message: 'Dominio de correo ajeno a la UCE.' });
         return;
       }
-
       const adapter = new SupabaseUserAdapter();
       const newUser = await adapter.saveOnboardingUser(dto);
-
-      res.status(201).json({
-        message: 'Registro exitoso vía Kinde SSO',
-        userId: newUser.id
-      });
-
+      res.status(201).json({ message: 'Registro exitoso vía Kinde SSO', userId: newUser.id });
     } catch (error: any) {
-      logger.error(`Error en Onboarding Kinde: ${error.message}`);
       res.status(400).json({ error: 'BAD_REQUEST', message: error.message });
     }
   }
 
-  // ==========================================
-  // REQUERIMIENTO: VERIFICACIÓN DE SESIÓN (GET /session)
-  // ==========================================
   public async checkSession(req: Request, res: Response): Promise<void> {
-    const { email } = (req as any).auth; // 🔥 Ahora usamos estrictamente el email
-
+    const { email } = (req as any).auth; 
     try {
       if (!email) {
         res.status(400).json({ status: "error", message: "El token JWT no contiene un email." });
         return;
       }
-
       const adapter = new SupabaseUserAdapter();
-      const userExists = await adapter.findByEmail(email); // 🔥 Cumpliendo tu contrato oficial
-
+      const userExists = await adapter.findByEmail(email); 
       if (!userExists) {
-        res.status(404).json({ 
-          status: "not_registered",
-          message: "El usuario se autenticó en Kinde pero no existe en RoomieSmart." 
-        });
+        res.status(404).json({ status: "not_registered", message: "El usuario no existe en RoomieSmart." });
         return;
       }
-
       res.status(200).json({ status: "ok" });
-
     } catch (error: any) {
-      logger.error(`Error en checkSession: ${error.message}`);
       res.status(500).json({ error: error.message });
     }
   }

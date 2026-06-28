@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import 'reflect-metadata'; 
+import 'reflect-metadata';
 
 export class UserProfileDto {
   age!: number;
@@ -30,9 +30,8 @@ export class BudgetRangeDto {
 }
 
 export class FinancialPreferencesDto {
-  @Type(() => BudgetRangeDto) 
+  @Type(() => BudgetRangeDto)
   budgetRange!: BudgetRangeDto;
-  
   roomType!: 'privada' | 'compartida';
   preferredCommonAreas!: string[];
   expenseManagement!: 'fondo-comun' | 'division-digital' | 'individual';
@@ -40,35 +39,25 @@ export class FinancialPreferencesDto {
 }
 
 export class NestedPreferencesDto {
-  @Type(() => UserProfileDto)
-  profile!: UserProfileDto;
-
-  @Type(() => LifestylePreferencesDto)
-  lifestyle!: LifestylePreferencesDto;
-
-  @Type(() => SocialPreferencesDto)
-  social!: SocialPreferencesDto;
-
-  @Type(() => FinancialPreferencesDto)
-  financial!: FinancialPreferencesDto;
+  @Type(() => UserProfileDto) profile!: UserProfileDto;
+  @Type(() => LifestylePreferencesDto) lifestyle!: LifestylePreferencesDto;
+  @Type(() => SocialPreferencesDto) social!: SocialPreferencesDto;
+  @Type(() => FinancialPreferencesDto) financial!: FinancialPreferencesDto;
 }
 
 export class CreateUserDto {
   name!: string;
   email!: string;
-  password?: string; // <--- Recibe el "" del Front y lo manda al vacío
 
-  @Type(() => NestedPreferencesDto) 
+  @Type(() => NestedPreferencesDto)
   preferences!: NestedPreferencesDto;
 
   public validate(): void {
-    // ¡ADIÓS VALIDATE PASSWORD!
-    this.validateProfile();
-  }
-
-  private validateProfile(): void {
     if (!this.preferences?.profile || this.preferences.profile.age < 17 || this.preferences.profile.age > 99) {
-      throw new Error('Validation Error: La edad debe ser realista.');
+      throw new Error('La edad debe ser realista.');
+    }
+    if (!this.email || !this.email.endsWith('@uce.edu.ec')) {
+      throw new Error('Solo se permiten correos institucionales UCE.');
     }
   }
 }
