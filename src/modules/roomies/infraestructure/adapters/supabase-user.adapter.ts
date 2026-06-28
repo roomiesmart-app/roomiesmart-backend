@@ -150,7 +150,7 @@ export class SupabaseUserAdapter implements IUserRepository {
       .from('users')
       .select(`
         id,
-        kinde_external_id, -- <--- 🔥 EXTRAEMOS LA CÉDULA DE KINDE
+        kinde_external_id, 
         name,
         ai_embedding,
         user_profiles ( birth_city_id ),
