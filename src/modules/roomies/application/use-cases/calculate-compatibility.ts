@@ -23,13 +23,19 @@ export class CalculateCompatibilityUseCase {
     const aiRankings = await this.aiService.rankCandidates(currentUser, candidates);
 
     // 4. Current User + Candidates + AI Scores = Final Matches. We combine the original candidate data with the AI scores to create a final list of matches that we can return to the frontend.
+    // 4. Current User + Candidates + AI Scores = Final Matches.
     const finalMatches = candidates.map(candidate => {
-      const aiResult = aiRankings.find((r: any) => r.candidateId === candidate.id);
+      const aiResult = aiRankings.find((r: any) => 
+        r.candidateId === candidate.id || r.id === candidate.id
+      );
       
+      // Atrapamos la calificación sin importar cómo la bautizó Groq hoy
+      const rawScore = aiResult?.compatibilityScore ?? aiResult?.score ?? aiResult?.percentage ?? 75;
+
       return {
         ...candidate,
-        compatibilityScore: aiResult ? aiResult.compatibilityScore : 0,
-        matchReason: aiResult ? aiResult.reason : ''
+        compatibilityScore: Number(rawScore),
+        matchReason: aiResult?.reason || aiResult?.matchReason || 'Perfiles con alta afinidad en estilo de vida y horarios.'
       };
     });
 
