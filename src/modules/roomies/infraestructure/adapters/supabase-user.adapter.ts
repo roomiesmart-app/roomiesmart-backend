@@ -150,6 +150,7 @@ export class SupabaseUserAdapter implements IUserRepository {
       .from('users')
       .select(`
         id,
+        kinde_external_id, -- <--- 🔥 EXTRAEMOS LA CÉDULA DE KINDE
         name,
         ai_embedding,
         user_profiles ( birth_city_id ),
@@ -170,28 +171,31 @@ export class SupabaseUserAdapter implements IUserRepository {
       const social = Array.isArray(user.user_social_preferences) ? user.user_social_preferences[0] : user.user_social_preferences;
       const financial = Array.isArray(user.user_financial_preferences) ? user.user_financial_preferences[0] : user.user_financial_preferences;
 
-      // Extraemos limpiamente los nombres del catálogo relacional
       const mappedHobbies = user.user_hobbies_mapping
         ?.map((mapping: any) => mapping.hobbies?.name)
         .filter(Boolean) || [];
 
-      return {
-        id: user.id,
+      // Creamos la carta inyectando el ID secreto de Kinde
+      const card: any = {
+        id: user.id, // UUID oficial de Supabase
+        _kindeId: user.kinde_external_id, // 🔥 PUENTE SECRETO PARA EL COMPARADOR
         fullName: user.name,
         location: profile?.birth_city_id ? 'Quito, Ecuador' : 'Ubicación no especificada', 
         habits: {
-          isEarlyBird: lifestyle?.is_early_bird ?? null,
-          hobbies: mappedHobbies.length > 0 ? mappedHobbies : ['Lectura', 'Videojuegos'], // Fallback seguro
-          petPreference: social?.pet_preference ?? null,
-          smokingPreference: social?.smoking_preference ?? null,
+          isEarlyBird: lifestyle?.is_early_bird ?? true,
+          hobbies: mappedHobbies.length > 0 ? mappedHobbies : ['Lectura', 'Videojuegos'],
+          petPreference: social?.pet_preference ?? 'No me molestan',
+          smokingPreference: social?.smoking_preference ?? 'No fumo',
         },
         budget: {
-          min: financial?.min_budget ?? null,
-          max: financial?.max_budget ?? null,
+          min: financial?.min_budget ?? 100,
+          max: financial?.max_budget ?? 250,
         },
-        roomType: financial?.room_type ?? null,
+        roomType: financial?.room_type ?? 'privada',
         ai_embedding: user.ai_embedding ?? null
       };
+
+      return card;
     });
   }
 
