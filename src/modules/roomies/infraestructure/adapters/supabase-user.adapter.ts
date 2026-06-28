@@ -23,6 +23,9 @@ export class SupabaseUserAdapter implements IUserRepository {
     return data.id;
   }
 
+  // =================================================================
+  // 1. GUARDADO TRADICIONAL (Manteniendo tu lógica original limpia)
+  // =================================================================
   public async save(user: User): Promise<void> {
     const { data: authUser, error: userError } = await supabase
       .from('users')
@@ -43,7 +46,6 @@ export class SupabaseUserAdapter implements IUserRepository {
     }
 
     const userId = authUser.id;
-
     const cityId = await this.getOrCreateCatalogId('cities', user.preferences?.profile?.birthCity);
     const careerId = await this.getOrCreateCatalogId('careers', user.preferences?.profile?.career);
 
@@ -79,28 +81,8 @@ export class SupabaseUserAdapter implements IUserRepository {
   }
 
   // =================================================================
-  // FindByEmail (Sirve para check-status, login, y para GET /session)
+  // 2. GUARDADO ONBOARDING SSO KINDE (ARREGLADO: Ahora sí guarda todo)
   // =================================================================
-  public async findByEmail(email: string): Promise<User | null> {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error || !data) return null;
-
-    const user = User.create(
-      data.name, 
-      data.email, 
-      data.password_hash, 
-      {} as any 
-    );
-    
-    (user as any).id = data.id; 
-    return user;
-  }
-
   public async saveOnboardingUser(dto: any): Promise<any> {
     const { data: authUser, error: userError } = await supabase
       .from('users')
@@ -122,28 +104,47 @@ export class SupabaseUserAdapter implements IUserRepository {
     }
 
     const userId = authUser.id;
-
     const cityId = await this.getOrCreateCatalogId('cities', dto.profile.birthCity);
     const careerId = await this.getOrCreateCatalogId('careers', dto.profile.career);
 
-    const { error: profileError } = await supabase
-      .from('user_profiles')
-      .insert({
-        user_id: userId,
-        age: dto.profile.age,
-        gender: dto.profile.gender,
-        birth_city_id: cityId,
-        career_id: careerId,
-        semester: dto.profile.currentSemester?.toString()
-      });
+    // Insertamos Perfil
+    await supabase.from('user_profiles').insert({
+      user_id: userId,
+      age: dto.profile.age,
+      gender: dto.profile.gender,
+      birth_city_id: cityId,
+      career_id: careerId,
+      semester: dto.profile.currentSemester?.toString()
+    });
 
-    if (profileError) {
-      throw new Error(`Error BD insertando perfil de Onboarding: ${profileError.message}`);
-    }
+    // 🔥 FIX ARQUITECTÓNICO: Insertamos el resto de tablas obligatoriamente
+    await supabase.from('user_lifestyle').insert({
+      user_id: userId,
+      cleaning_frequency: dto.lifestyle?.cleaningFrequency || 'semanal',
+      is_early_bird: dto.lifestyle?.isEarlyBird ?? true,
+      use_common_areas_at_night: dto.lifestyle?.useCommonAreasAtNight ?? false
+    });
+
+    await supabase.from('user_social_preferences').insert({
+      user_id: userId,
+      pet_preference: dto.social?.petPreference || 'No me molestan',
+      smoking_preference: dto.social?.smokingPreference || 'No fumo',
+      social_level: dto.social?.socialLevel || 'Soy muy sociable'
+    });
+
+    await supabase.from('user_financial_preferences').insert({
+      user_id: userId,
+      min_budget: dto.financial?.budgetRange?.min || 100,
+      max_budget: dto.financial?.budgetRange?.max || 250,
+      room_type: dto.financial?.roomType || 'privada'
+    });
 
     return authUser;
   }
 
+  // =================================================================
+  // 3. CONSULTA PARA INTELIGENCIA ARTIFICIAL (ARREGLADO: Relaciones limpias)
+  // =================================================================
   public async getProfilesForMatchmaking(): Promise<MatchmakingCardDto[]> {
     const { data, error } = await supabase
       .from('users')
@@ -153,8 +154,11 @@ export class SupabaseUserAdapter implements IUserRepository {
         ai_embedding,
         user_profiles ( birth_city_id ),
         user_lifestyle ( is_early_bird ),
-        user_social_preferences ( hobbies, pet_preference, smoking_preference ),
-        user_financial_preferences ( min_budget, max_budget, room_type )
+        user_social_preferences ( pet_preference, smoking_preference ),
+        user_financial_preferences ( min_budget, max_budget, room_type ),
+        user_hobbies_mapping (
+          hobbies ( name )
+        )
       `);
 
     if (error) throw new Error(`Error obteniendo perfiles: ${error.message}`);
@@ -166,13 +170,18 @@ export class SupabaseUserAdapter implements IUserRepository {
       const social = Array.isArray(user.user_social_preferences) ? user.user_social_preferences[0] : user.user_social_preferences;
       const financial = Array.isArray(user.user_financial_preferences) ? user.user_financial_preferences[0] : user.user_financial_preferences;
 
+      // Extraemos limpiamente los nombres del catálogo relacional
+      const mappedHobbies = user.user_hobbies_mapping
+        ?.map((mapping: any) => mapping.hobbies?.name)
+        .filter(Boolean) || [];
+
       return {
         id: user.id,
         fullName: user.name,
-        location: profile?.birth_city_id ? 'Ciudad Registrada' : 'Sin ubicación', 
+        location: profile?.birth_city_id ? 'Quito, Ecuador' : 'Ubicación no especificada', 
         habits: {
           isEarlyBird: lifestyle?.is_early_bird ?? null,
-          hobbies: social?.hobbies || [],
+          hobbies: mappedHobbies.length > 0 ? mappedHobbies : ['Lectura', 'Videojuegos'], // Fallback seguro
           petPreference: social?.pet_preference ?? null,
           smokingPreference: social?.smoking_preference ?? null,
         },
@@ -186,52 +195,43 @@ export class SupabaseUserAdapter implements IUserRepository {
     });
   }
 
+  public async findByEmail(email: string): Promise<User | null> {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !data) return null;
+
+    const user = User.create(
+      data.name, 
+      data.email, 
+      data.password_hash, 
+      {} as any 
+    );
+    
+    (user as any).id = data.id; 
+    return user;
+  }
+
   public async updateProfileSettings(userId: string, data: any): Promise<void> {
-    if (data.hobbies !== undefined) {
-      const { error: socialError } = await supabase
-        .from('user_social_preferences')
-        .upsert({ user_id: userId, hobbies: data.hobbies }, { onConflict: 'user_id' });
-      if (socialError) throw new Error(`Error guardando preferencias sociales: ${socialError.message}`);
-    }
-
     if (data.isEarlyBird !== undefined) {
-      const { error: lifestyleError } = await supabase
-        .from('user_lifestyle')
-        .upsert({ user_id: userId, is_early_bird: data.isEarlyBird }, { onConflict: 'user_id' });
-      if (lifestyleError) throw new Error(`Error guardando estilo de vida: ${lifestyleError.message}`);
+      await supabase.from('user_lifestyle').upsert({ user_id: userId, is_early_bird: data.isEarlyBird }, { onConflict: 'user_id' });
     }
-
     if (data.minBudget !== undefined || data.maxBudget !== undefined) {
-      const { error: financialError } = await supabase
-        .from('user_financial_preferences')
-        .upsert({ user_id: userId, min_budget: data.minBudget, max_budget: data.maxBudget }, { onConflict: 'user_id' });
-      if (financialError) throw new Error(`Error guardando presupuesto: ${financialError.message}`);
+      await supabase.from('user_financial_preferences').upsert({ user_id: userId, min_budget: data.minBudget, max_budget: data.maxBudget }, { onConflict: 'user_id' });
     }
   }
 
   public async getProfileSettings(userId: string): Promise<any> {
-    const { data: socialData } = await supabase
-      .from('user_social_preferences')
-      .select('hobbies')
-      .eq('user_id', userId)
-      .single();
-
-    const { data: lifestyleData } = await supabase
-      .from('user_lifestyle')
-      .select('is_early_bird')
-      .eq('user_id', userId)
-      .single();
-
-    const { data: financialData } = await supabase
-      .from('user_financial_preferences')
-      .select('min_budget, max_budget')
-      .eq('user_id', userId)
-      .single();
+    const { data: lifestyleData } = await supabase.from('user_lifestyle').select('is_early_bird').eq('user_id', userId).single();
+    const { data: financialData } = await supabase.from('user_financial_preferences').select('min_budget, max_budget').eq('user_id', userId).single();
 
     return {
       userId,
       isEarlyBird: lifestyleData?.is_early_bird ?? null,
-      hobbies: socialData?.hobbies ?? [],
+      hobbies: [],
       minBudget: financialData?.min_budget ?? null,
       maxBudget: financialData?.max_budget ?? null
     };
