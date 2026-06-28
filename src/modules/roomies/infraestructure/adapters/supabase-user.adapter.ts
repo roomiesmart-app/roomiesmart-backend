@@ -150,8 +150,8 @@ export class SupabaseUserAdapter implements IUserRepository {
       .from('users')
       .select(`
         id,
-        kinde_external_id, 
         name,
+        email,
         ai_embedding,
         user_profiles ( birth_city_id ),
         user_lifestyle ( is_early_bird ),
@@ -175,11 +175,9 @@ export class SupabaseUserAdapter implements IUserRepository {
         ?.map((mapping: any) => mapping.hobbies?.name)
         .filter(Boolean) || [];
 
-      // Creamos la carta inyectando el ID secreto de Kinde
-      const card: any = {
-        id: user.id, // UUID oficial de Supabase
-        _kindeId: user.kinde_external_id, // 🔥 PUENTE SECRETO PARA EL COMPARADOR
-        fullName: user.name,
+      return {
+        id: user.id,
+        fullName: user.name || "Estudiante UCE",
         location: profile?.birth_city_id ? 'Quito, Ecuador' : 'Ubicación no especificada', 
         habits: {
           isEarlyBird: lifestyle?.is_early_bird ?? true,
@@ -194,8 +192,6 @@ export class SupabaseUserAdapter implements IUserRepository {
         roomType: financial?.room_type ?? 'privada',
         ai_embedding: user.ai_embedding ?? null
       };
-
-      return card;
     });
   }
 
