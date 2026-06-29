@@ -12,31 +12,44 @@ export class GroqAiAdapter implements IAiService {
   public async rankCandidates(currentUser: MatchmakingCardDto, candidates: MatchmakingCardDto[]): Promise<any[]> {
     if (candidates.length === 0) return [];
 
-    const prompt = `
-      Eres el motor central de Inteligencia Artificial Semántica de la plataforma universitaria RoomieSmart.
-      Tu trabajo es analizar a fondo al "Usuario Principal" y comparar su perfil contra una "Lista de Candidatos".
+  const prompt = `
+      Eres una Unidad de Cálculo Matricial Estricto para la app universitaria RoomieSmart.
+      Audita el "Perfil Buscador (con sus filtros activos)" frente a la "Lista de Candidatos" y calcula puntajes exactos.
 
-      Usuario Principal:
+      Perfil Buscador:
       ${JSON.stringify(currentUser)}
 
       Lista de Candidatos:
       ${JSON.stringify(candidates)}
 
-      REGLAS DE EVALUACIÓN SEMÁNTICA (MUY IMPORTANTE):
-      1. COMPRENSION FLEXIBLE: No seas un evaluador rígido de texto exacto. Si el usuario tiene el hobby "Gaming" y el candidato tiene "Videojuegos", eso representa un 100% de coincidencia semántica.
-      2. PENALIZACION PROPORCIONAL: Si el usuario busca "Limpieza Diaria" y el candidato registra "2-3 veces por semana", resta puntos proporcionalmente (~15% menos), pero NO lo califiques como 0% a menos que exista una incompatibilidad extrema (ejemplo: fumador vs alguien que no tolera el humo).
-      3. EVALUACION INTEGRAL: Cruza estrictamente tres pilares para el puntaje final:
-         - Viabilidad Financiera (Solapamiento de presupuestos min/max).
-         - Hábitos de Convivencia (Ritmo madrugador/nocturno y limpieza).
-         - Afinidad Social (Intersección de géneros musicales y hobbies).
+      RÚBRICA MATEMÁTICA ESTRICTA (5 COLUMNAS DE EXACTAMENTE 20 PUNTOS CADA UNA = 100 PUNTOS):
 
-      REGLAS ESTRICTAS DE FORMATO: 
-      1. Tu respuesta debe ser ÚNICAMENTE un objeto JSON válido con una sola llave raíz llamada "matches".
-      2. DEBES evaluar absolutamente a TODOS los candidatos. El arreglo "matches" debe tener EXACTAMENTE ${candidates.length} elementos, sin omitir a ninguno.
-      3. Cada objeto dentro del arreglo debe contener estrictamente estas tres llaves: 
-         - "candidateId" (string con el id exacto del candidato)
-         - "compatibilityScore" (número entero entre 10 y 100)
-         - "reason" (string corto de máximo 15 palabras justificando el porcentaje basado en los datos reales comparados).
+      1. PRESUPUESTO (max 20 pts): Diferencia $0 = 20 pts | Leve (+$1 a $35) = 15 pts | Media (+$36 a $70) = 10 pts | Alta = 5 pts | Extrema (+$100) = 0 pts.
+      2. TABACO (max 20 pts): [REGLA DE VETO FATAL]: Si el buscador exige "No tolero/No fuma" y el candidato FUMA -> Puntaje Tabaco = 0, y activa bandera veto. Si coinciden o no fuma = 20 pts.
+      3. LIMPIEZA (max 20 pts): Texto exacto = 20 pts | Semejante (ej. Diaria vs 2-3 veces) = 10 pts | Incompatible = 0 pts.
+      4. HOBBIES (max 20 pts): (Coincidencias reales / Hobbies exigidos en el filtro) * 20.
+      5. MÚSICA (max 20 pts): (Coincidencias reales / Géneros exigidos en el filtro) * 20.
+
+      *(Si un filtro del buscador vino vacío/nulo, otorga 20 pts obligatorios en ese rubro al candidato).*
+
+      ESTRUCTURA JSON OBLIGATORIA DE SALIDA (Respeta las llaves exactas):
+      {
+        "matches": [
+          {
+            "candidateId": "id_exacto",
+            "totalScore": suma_de_los_5_rubros,
+            "veto": boolean_true_si_violó_tabaco,
+            "breakdown": {
+              "presupuesto": numero_0_a_20,
+              "tabaco": numero_0_a_20,
+              "limpieza": numero_0_a_20,
+              "hobbies": numero_0_a_20,
+              "musica": numero_0_a_20
+            },
+            "reason": "Explicación humana ultra corta de máximo 8 palabras"
+          }
+        ]
+      }
     `;
 
     try {
