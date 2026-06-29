@@ -16,6 +16,7 @@ services:
       - DATABASE_URL=${DEV_DATABASE_URL}
       - SUPABASE_URL=${DEV_SUPABASE_URL}
       - SUPABASE_SERVICE_ROLE_KEY=${DEV_SUPABASE_SERVICE_ROLE_KEY}
+      - KINDE_ISSUER_URL=${DEV_KINDE_ISSUER_URL}
 
   frontend:
     image: paulchapi/roomiesmart-frontend:dev
