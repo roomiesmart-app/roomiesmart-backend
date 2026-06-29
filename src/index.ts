@@ -26,10 +26,17 @@ const allowedOrigins = [
   'http://roomiesmartprod.programacionwebuce.net', // Domain Prod (Nginx HTTP)
   'https://roomiesmartprod.programacionwebuce.net', // Domain Prod (Cloudflare HTTPS)
 
+  // 🔥 NUEVOS DOMINIOS OFICIALES (roomiesmart.lat)
+  'https://roomiesmart.lat',
+  'http://roomiesmart.lat',
+  'https://qa.roomiesmart.lat',
+  'http://qa.roomiesmart.lat',
+  'https://prod.roomiesmart.lat',
+  'http://prod.roomiesmart.lat',
+
   // Orígenes dinámicos inyectados vía variables de entorno (.env)
   process.env.CLIENT_ORIGIN
 ].filter(Boolean) as string[];
-
 const corsOptions: CorsOptions = {
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin || allowedOrigins.includes(origin)) {
