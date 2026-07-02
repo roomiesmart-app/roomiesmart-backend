@@ -5,6 +5,7 @@ import { ProfileDto } from '../../domain/dtos/profile.dto.js';
 import { GetProfileUseCase } from '../../application/use-cases/get-profile.js';
 import { UpdateProfileUseCase } from '../../application/use-cases/update-profile.js';
 import { SupabaseUserAdapter } from '../adapters/supabase-user.adapter.js';
+import { logger } from '../../../../core/logger.js';
 
 export class ProfileController {
   
@@ -28,6 +29,7 @@ export class ProfileController {
       res.status(200).json(profile);
 
     } catch (error: any) {
+      logger.error(error.message);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }
@@ -61,10 +63,12 @@ export class ProfileController {
       res.status(201).json({ message: 'Perfil guardado correctamente en Supabase', data: dto });
 
     } catch (error: any) {
+      logger.error(error.message);
       res.status(400).json({
         error: 'BAD_REQUEST',
         message: error.message
       });
+      logger.error(error.message);
     }
   }
 }

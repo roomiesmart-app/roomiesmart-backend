@@ -1,17 +1,20 @@
 export interface MatchmakingCardDto {
   id: string;
   fullName: string;
-  location: string; 
-  habits: {
-    isEarlyBird: boolean | null;
-    hobbies: string[];
-    petPreference: string | null;
-    smokingPreference: string | null;
-  };
-  budget: {
-    min: number | null;
-    max: number | null;
-  };
+  location: string;
   roomType: string | null;
-  ai_embedding: number[] | null; 
+  preferences: {
+    profile: { age: number; gender: string };
+    lifestyle: { isEarlyBird: boolean; cleaningFrequency: string };
+    social: { 
+      hobbies: string[]; 
+      musicGenres: string[]; 
+      petPreference: string; 
+      smokingPreference: string; 
+    };
+    financial: { 
+      budgetRange: { min: number; max: number } 
+    };
+  };
+  ai_embedding: number[] | null;
 }

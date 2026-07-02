@@ -12,20 +12,44 @@ export class GroqAiAdapter implements IAiService {
   public async rankCandidates(currentUser: MatchmakingCardDto, candidates: MatchmakingCardDto[]): Promise<any[]> {
     if (candidates.length === 0) return [];
 
-    // PROMPT 
-    const prompt = `
-      Actúa como un algoritmo de matchmaking. Compara al "Usuario Principal" con la "Lista de Candidatos".
-      
-      Usuario Principal:
+  const prompt = `
+      Eres una Unidad de Cálculo Matricial Estricto para la app universitaria RoomieSmart.
+      Audita el "Perfil Buscador (con sus filtros activos)" frente a la "Lista de Candidatos" y calcula puntajes exactos.
+
+      Perfil Buscador:
       ${JSON.stringify(currentUser)}
 
       Lista de Candidatos:
       ${JSON.stringify(candidates)}
 
-      REGLAS ESTRICTAS: 
-      1. Tu respuesta debe ser ÚNICAMENTE un objeto JSON válido con una llave llamada "matches".
-      2. DEBES evaluar a TODOS los candidatos. El arreglo "matches" debe tener EXACTAMENTE ${candidates.length} elementos, sin omitir a ninguno.
-      3. Cada objeto debe tener estas llaves: "candidateId" (string), "compatibilityScore" (número 0-100) y "reason" (string corto).
+      RÚBRICA MATEMÁTICA ESTRICTA (5 COLUMNAS DE EXACTAMENTE 20 PUNTOS CADA UNA = 100 PUNTOS):
+
+      1. PRESUPUESTO (max 20 pts): Diferencia $0 = 20 pts | Leve (+$1 a $35) = 15 pts | Media (+$36 a $70) = 10 pts | Alta = 5 pts | Extrema (+$100) = 0 pts.
+      2. TABACO (max 20 pts): [REGLA DE VETO FATAL]: Si el buscador exige "No tolero/No fuma" y el candidato FUMA -> Puntaje Tabaco = 0, y activa bandera veto. Si coinciden o no fuma = 20 pts.
+      3. LIMPIEZA (max 20 pts): Texto exacto = 20 pts | Semejante (ej. Diaria vs 2-3 veces) = 10 pts | Incompatible = 0 pts.
+      4. HOBBIES (max 20 pts): (Coincidencias reales / Hobbies exigidos en el filtro) * 20.
+      5. MÚSICA (max 20 pts): (Coincidencias reales / Géneros exigidos en el filtro) * 20.
+
+      *(Si un filtro del buscador vino vacío/nulo, otorga 20 pts obligatorios en ese rubro al candidato).*
+
+      ESTRUCTURA JSON OBLIGATORIA DE SALIDA (Respeta las llaves exactas):
+      {
+        "matches": [
+          {
+            "candidateId": "id_exacto",
+            "totalScore": suma_de_los_5_rubros,
+            "veto": boolean_true_si_violó_tabaco,
+            "breakdown": {
+              "presupuesto": numero_0_a_20,
+              "tabaco": numero_0_a_20,
+              "limpieza": numero_0_a_20,
+              "hobbies": numero_0_a_20,
+              "musica": numero_0_a_20
+            },
+            "reason": "Explicación humana ultra corta de máximo 8 palabras"
+          }
+        ]
+      }
     `;
 
     try {
@@ -37,11 +61,8 @@ export class GroqAiAdapter implements IAiService {
       });
 
       const responseContent = chatCompletion.choices[0]?.message?.content || "{}";
-      
-
       const parsedData = JSON.parse(responseContent);
       
-      // Extract the matches array from the AI response, ensuring it adheres to the expected structure
       return parsedData.matches || [];
 
     } catch (error) {
