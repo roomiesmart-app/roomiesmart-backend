@@ -12,6 +12,9 @@ import { OnboardingRequestDto } from '../../domain/dtos/onboarding.dto.js';
 import { FindOrCreateConversationUseCase } from '../../application/use-cases/find-or-create-conversation.js';
 import { GetMessagesUseCase } from '../../application/use-cases/get-messages.js';
 import { SupabaseChatAdapter } from '../adapters/supabase-chat.adapter.js';
+import { supabase } from '../../../../core/database.js';
+import { PublishSpaceUseCase } from '../../application/use-cases/publish-space.js';
+import { SupabaseSpaceAdapter } from '../adapters/supabase-space.adapter.js';
 
 export class RoomieController {
   public async register(req: Request, res: Response): Promise<void> {
@@ -186,6 +189,30 @@ export class RoomieController {
 
       res.status(201).json(newMessage);
     } catch (error: any) {
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+
+  public async createSpace(req: Request, res: Response): Promise<void> {
+    try {
+      // Como quitamos Kinde, el Front debe enviar obligatoriamente el ownerId
+      const { ownerId, ...payload } = req.body;
+
+      const useCase = new PublishSpaceUseCase(new SupabaseSpaceAdapter());
+      const newSpace = await useCase.execute(ownerId, payload);
+
+      res.status(201).json(newSpace);
+    } catch (error: any) {
+      // Capturamos los errores de validación (incluyendo el de las 5 fotos) para devolver un 400
+      if (
+        error.message.includes('Faltan campos') || 
+        error.message.includes('obligatorio') || 
+        error.message.includes('5 fotos')
+      ) {
+        res.status(400).json({ error: 'BAD_REQUEST', message: error.message });
+        return;
+      }
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }
