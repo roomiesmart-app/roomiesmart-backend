@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { RoomieController } from './roomie.controller.js';
-import { requireKindeAuth } from '../../../../core/middlewares/kinde-auth.middleware.js';
+import { requireKindeAuth } from '../../../../core/middlewares/kinde-auth.middleware.js'; // Ajusta la ruta si es necesario
 
 const router = Router();
 const roomieController = new RoomieController();
@@ -12,4 +12,20 @@ router.get('/api/v1/identity/check-status/:email', roomieController.checkStatus.
 router.post('/api/v1/identity/onboarding', requireKindeAuth, roomieController.onboarding.bind(roomieController));
 router.get('/session', requireKindeAuth, roomieController.checkSession);
 
+// Endpoint para el botón "Mensaje" de la tarjeta
+router.post('/api/v1/roomies/conversations', roomieController.initializeConversation.bind(roomieController));
+
+// Endpoint para cargar el historial de chats
+router.get('/api/v1/roomies/conversations/:conversationId/messages', roomieController.getHistory.bind(roomieController));
+
+// Endpoint para enviar un mensaje
+router.post('/api/v1/roomies/conversations/:conversationId/messages', roomieController.sendMessage.bind(roomieController));
+
+// Endpoint para publicar un nuevo departamento/espacio (Libre de Kinde)
+router.post(
+  '/api/v1/roomies/spaces',
+  roomieController.createSpace.bind(roomieController)
+);
+
 export default router;
+

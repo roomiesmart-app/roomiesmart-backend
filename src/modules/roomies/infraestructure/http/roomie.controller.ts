@@ -9,6 +9,12 @@ import { logger } from '../../../../core/logger.js';
 import { CalculateCompatibilityUseCase } from '../../application/use-cases/calculate-compatibility.js';
 import { GroqAiAdapter } from '../adapters/groq-ai.controller.js'; 
 import { OnboardingRequestDto } from '../../domain/dtos/onboarding.dto.js';
+import { FindOrCreateConversationUseCase } from '../../application/use-cases/find-or-create-conversation.js';
+import { GetMessagesUseCase } from '../../application/use-cases/get-messages.js';
+import { SupabaseChatAdapter } from '../adapters/supabase-chat.adapter.js';
+import { supabase } from '../../../../core/database.js';
+import { PublishSpaceUseCase } from '../../application/use-cases/publish-space.js';
+import { SupabaseSpaceAdapter } from '../adapters/supabase-space.adapter.js';
 
 export class RoomieController {
   public async register(req: Request, res: Response): Promise<void> {
@@ -130,6 +136,84 @@ export class RoomieController {
       res.status(200).json({ status: "ok" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
+    }
+  }
+
+  public async initializeConversation(req: Request, res: Response): Promise<void> {
+    try {
+      // Ojo: asegúrate de que el Front mande estos datos en el body
+      const { currentUserId, targetUserId } = req.body;
+
+      if (!currentUserId || !targetUserId) {
+        res.status(400).json({ error: 'BAD_REQUEST', message: 'Faltan IDs de usuarios.' });
+        return;
+      }
+
+      const useCase = new FindOrCreateConversationUseCase(new SupabaseChatAdapter());
+      const conversationId = await useCase.execute(currentUserId, targetUserId);
+
+      res.status(200).json({ conversationId });
+    } catch (error: any) {
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+  public async getHistory(req: Request, res: Response): Promise<void> {
+    try {
+      const { conversationId } = req.params;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+
+      const useCase = new GetMessagesUseCase(new SupabaseChatAdapter());
+      const messages = await useCase.execute(conversationId as string, limit, offset);
+
+      res.status(200).json(messages);
+    } catch (error: any) {
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+  public async sendMessage(req: Request, res: Response): Promise<void> {
+    try {
+      const { conversationId } = req.params;
+      const { senderId, content } = req.body;
+
+      if (!senderId || !content) {
+        res.status(400).json({ error: 'BAD_REQUEST', message: 'Faltan datos del mensaje.' });
+        return;
+      }
+
+      // Llamamos directo al adaptador por velocidad (o puedes crear un UseCase intermedio si prefieres)
+      const adapter = new SupabaseChatAdapter();
+      const newMessage = await adapter.saveMessage(conversationId as string, senderId, content);
+
+      res.status(201).json(newMessage);
+    } catch (error: any) {
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+
+  public async createSpace(req: Request, res: Response): Promise<void> {
+    try {
+      // Como quitamos Kinde, el Front debe enviar obligatoriamente el ownerId
+      const { ownerId, ...payload } = req.body;
+
+      const useCase = new PublishSpaceUseCase(new SupabaseSpaceAdapter());
+      const newSpace = await useCase.execute(ownerId, payload);
+
+      res.status(201).json(newSpace);
+    } catch (error: any) {
+      // Capturamos los errores de validación (incluyendo el de las 5 fotos) para devolver un 400
+      if (
+        error.message.includes('Faltan campos') || 
+        error.message.includes('obligatorio') || 
+        error.message.includes('5 fotos')
+      ) {
+        res.status(400).json({ error: 'BAD_REQUEST', message: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }
 }
