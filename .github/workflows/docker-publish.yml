@@ -1,12 +1,70 @@
-name: Build and Deploy Backend
+name: CI/CD Backend Pipeline (Release & Deploy)
 
 on:
   push:
-    branches: [ "dev", "main", "qa" ] # Añadimos la rama qa al gatillo
+    branches: [ "dev", "main" ] # QA removido para despliegue manual
+  pull_request: # 🟢 Simulacros de release solo en PRs a main
+    branches: [ "main" ]
+  workflow_dispatch: # Gatillo manual para QA
 
 jobs:
-  build-and-push:
+  # =========================================================
+  # ETAPA 1: SEMANTIC RELEASE (Solo toca la rama main)
+  # =========================================================
+  release:
+    name: Build, Test and Release
     runs-on: ubuntu-latest
+    # Solo corre en main (push) o simulacros (pull_request)
+    if: github.ref_name == 'main' || github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Project
+        run: npm run build --if-present
+
+      - name: Run Tests
+        run: npm test --if-present
+
+      # 🟢 SIMULACRO: Solo si es un Pull Request
+      - name: Run Semantic Release (Dry Run)
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release --dry-run
+
+      # 🔴 PRODUCCIÓN: Solo si es un push directo/merge a main
+      - name: Run Semantic Release (Production)
+        if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+  # =========================================================
+  # ETAPA 2: BUILD Y DEPLOY (La infraestructura actual)
+  # =========================================================
+  build-and-push:
+    name: Build and Deploy Docker
+    runs-on: ubuntu-latest
+    needs: [release]
+    # 🛡️ EL CANDADO SRE: Corre siempre y cuando Release no haya fallado, y omite los PRs
+    if: |
+      always() && 
+      (needs.release.result == 'success' || needs.release.result == 'skipped') &&
+      github.event_name != 'pull_request'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -17,15 +75,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Determine environment tag
+      - name: Determine environment tag and build target
         id: environment
         run: |
           if [ "${{ github.ref_name }}" == "main" ]; then
             echo "TAG=prod" >> $GITHUB_ENV
+            echo "BUILD_TARGET=production" >> $GITHUB_ENV
           elif [ "${{ github.ref_name }}" == "qa" ]; then
-            echo "TAG=qa" >> $GITHUB_ENV # NUEVO: Etiqueta dinámica para QA
+            echo "TAG=qa" >> $GITHUB_ENV
+            echo "BUILD_TARGET=production" >> $GITHUB_ENV
           else
             echo "TAG=dev" >> $GITHUB_ENV
+            echo "BUILD_TARGET=development" >> $GITHUB_ENV
           fi
 
       - name: Build and push Docker image
@@ -33,10 +94,11 @@ jobs:
         with:
           context: .
           push: true
+          target: ${{ env.BUILD_TARGET }}
           tags: paulchapi/roomiesmart-backend:${{ env.TAG }}
 
       # =========================================================
-      # DESPLIEGUE A DESARROLLO (Intacto - No se modificó nada)
+      # DESPLIEGUE A DESARROLLO
       # =========================================================
       - name: Deploy Backend to Dev Environment
         if: github.ref_name == 'dev'
@@ -48,28 +110,28 @@ jobs:
           script: |
             cd ~/roomiesmart-backend
             docker pull paulchapi/roomiesmart-backend:dev
-            docker compose -f docker-compose.dev.yml up -d api-dev
+            docker compose -f docker-compose.dev.yml up -d --remove-orphans api
 
       # =========================================================
-      # DESPLIEGUE A PRODUCCIÓN (Intacto - No se modificó nada)
+      # DESPLIEGUE A PRODUCCIÓN
       # =========================================================
       - name: Deploy Backend to Production Environment
         if: github.ref_name == 'main'
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.AWS_HOST }}
+          host: ${{ secrets.AWS_HOST_PROD }}
           username: ubuntu
           key: ${{ secrets.AWS_SSH_KEY }}
           script: |
             cd ~/roomiesmart-production
             docker pull paulchapi/roomiesmart-backend:prod
-            docker compose -f docker-compose.prod.yml up -d api-prod
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans api
 
       # =========================================================
-      # DESPLIEGUE A QA (NUEVO - Solo se ejecuta si estás en qa)
+      # DESPLIEGUE A QA (Manual desde GitHub)
       # =========================================================
       - name: Deploy Backend to QA Environment
-        if: github.ref_name == 'qa'
+        if: github.ref_name == 'qa' || github.event_name == 'workflow_dispatch'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.AWS_HOST_QA }}
@@ -78,4 +140,4 @@ jobs:
           script: |
             cd ~/roomiesmart-qa
             docker pull paulchapi/roomiesmart-backend:qa
-            docker compose -f docker-compose.qa.yml up -d api-dev
+            docker compose -f docker-compose.qa.yml up -d --remove-orphans api

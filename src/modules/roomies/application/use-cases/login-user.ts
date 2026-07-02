@@ -2,6 +2,7 @@ import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { LoginUserDto } from '../../domain/dtos/login-user.dto.js';
 import type { IUserRepository } from '../ports/user.repository.js';
+import { logger } from '../../../../core/logger.js';
 
 export class LoginUserUseCase {
   constructor(private userRepository: IUserRepository) {}
@@ -11,11 +12,13 @@ export class LoginUserUseCase {
 
     const user = await this.userRepository.findByEmail(dto.email);
     if (!user) {
+      logger.error('Auth Error: Credenciales inválidas.');
       throw new Error('Auth Error: Credenciales inválidas.');
     }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.password_hash);
     if (!isPasswordValid) {
+      logger.error('Auth Error: Credenciales inválidas.');
       throw new Error('Auth Error: Credenciales inválidas.');
     }
 
