@@ -139,6 +139,53 @@ export class RoomieController {
     }
   }
 
+  // =================================================================
+  // 🔥 OBTENER PERFIL DEL USUARIO LOGUEADO (Con Logs de Diagnóstico)
+  // =================================================================
+  public async getMe(req: Request, res: Response): Promise<void> {
+    try {
+      console.log("\n📢 [FINANZAS 1/4] Petición GET recibida en /api/v1/identity/me");
+      
+      const email = (req as any).auth?.email;
+      console.log(`📢 [FINANZAS 2/4] Email extraído del Token de Kinde: ${email || 'NINGUNO'}`);
+      
+      if (!email) {
+        console.log("❌ Error: El token JWT no mandó ningún email.");
+        res.status(400).json({ status: "error", message: "El token JWT no contiene un email." });
+        return;
+      }
+
+      console.log("📢 [FINANZAS 3/4] Buscando al usuario en Supabase...");
+      const adapter = new SupabaseUserAdapter();
+      const user = await adapter.findByEmail(email); 
+
+      if (!user) {
+        console.log(`❌ Error: El correo ${email} no existe en la tabla de usuarios.`);
+        res.status(404).json({ status: "not_registered", message: "Usuario no encontrado." });
+        return;
+      }
+      
+      const userId = (user as any).id;
+      console.log(`✅ ¡Usuario encontrado! Su UUID es: ${userId}`);
+
+      // Obtenemos las preferencias para sacar el presupuesto
+      const settings = await adapter.getProfileSettings(userId);
+      console.log(`📢 [FINANZAS 4/4] Presupuesto máximo del usuario: $${settings?.maxBudget || 250}`);
+
+      res.status(200).json({
+        data: {
+          id: userId, 
+          email: email,
+          monthlyBudget: settings?.maxBudget || 250,
+          // El ID de departamento temporal hasta que asigne casas reales
+          departmentId: "b44a4eae-1dd3-4e3d-a21f-e438fed48d36" 
+        }
+      });
+    } catch (error: any) {
+      console.error("🔥 EXPLOSIÓN EN EL CONTROLADOR GET ME:", error);
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
   public async initializeConversation(req: Request, res: Response): Promise<void> {
     try {
       // Ojo: asegúrate de que el Front mande estos datos en el body
