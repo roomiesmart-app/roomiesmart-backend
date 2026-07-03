@@ -9,7 +9,6 @@ router.post('/api/v1/identity/register', roomieController.register.bind(roomieCo
 router.post('/api/v1/identity/login', roomieController.login.bind(roomieController));
 router.post('/api/v1/identity/matchmaking-profiles', roomieController.getMatchmakingCards.bind(roomieController));
 router.get('/api/v1/identity/check-status/:email', roomieController.checkStatus.bind(roomieController));
-router.get('/api/v1/identity/me', requireKindeAuth, roomieController.getMe.bind(roomieController));
 router.post('/api/v1/identity/onboarding', requireKindeAuth, roomieController.onboarding.bind(roomieController));
 router.get('/session', requireKindeAuth, roomieController.checkSession);
 
@@ -22,7 +21,7 @@ router.get('/api/v1/roomies/conversations/:conversationId/messages', roomieContr
 // Endpoint para enviar un mensaje
 router.post('/api/v1/roomies/conversations/:conversationId/messages', roomieController.sendMessage.bind(roomieController));
 
-// Endpoint para publicar un nuevo c/espacio (Libre de Kinde)
+// Endpoint para publicar un nuevo departamento/espacio (Libre de Kinde)
 router.post(
   '/api/v1/roomies/spaces',
   roomieController.createSpace.bind(roomieController)
