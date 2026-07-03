@@ -30,22 +30,19 @@ export class ExpenseController {
   }
 
   public async getExpenses(req: Request, res: Response): Promise<void> {
-  try {
-    
-    const rawId = req.params.departmentId;
-    const departmentId = Array.isArray(rawId) ? rawId[0] : rawId;
+    try {
+      const rawId = req.params.departmentId;
+      const departmentId = Array.isArray(rawId) ? rawId[0] : rawId;
 
-    if (!departmentId) {
-      res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta departmentId' });
-      return;
+      if (!departmentId) {
+        res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta departmentId' });
+        return;
+      }
+
+      const expenses = await this.expenseRepository.getExpensesByDepartment(departmentId);
+      res.status(200).json({ data: expenses });
+    } catch (error: any) {
+      res.status(500).json({ error: 'INTERNAL_ERROR', message: error.message });
     }
-
-   
-    const expenses = await this.expenseRepository.getExpensesByDepartment(departmentId);
-    res.status(200).json({ data: expenses });
-
-  } catch (error: any) {
-    res.status(500).json({ error: 'INTERNAL_ERROR', message: error.message });
   }
-}
 }
