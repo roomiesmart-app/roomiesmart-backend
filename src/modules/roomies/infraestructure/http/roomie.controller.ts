@@ -174,11 +174,16 @@ export class RoomieController {
 
       res.status(200).json({
         data: {
-          id: userId, 
+          id: userId,
           email: email,
           monthlyBudget: settings?.maxBudget || 250,
+          minBudget: settings?.minBudget ?? null,
+          roomType: settings?.roomType ?? null,
+          expenseManagement: settings?.expenseManagement ?? null,
+          sharedItems: settings?.sharedItems ?? [],
+          preferredCommonAreas: settings?.preferredCommonAreas ?? [],
           // El ID de departamento temporal hasta que asigne casas reales
-          departmentId: "b44a4eae-1dd3-4e3d-a21f-e438fed48d36" 
+          departmentId: "b44a4eae-1dd3-4e3d-a21f-e438fed48d36"
         }
       });
     } catch (error: any) {
