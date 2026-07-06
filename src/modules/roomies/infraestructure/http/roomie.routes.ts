@@ -13,25 +13,58 @@ router.get('/api/v1/identity/me', requireKindeAuth, roomieController.getMe.bind(
 router.post('/api/v1/identity/onboarding', requireKindeAuth, roomieController.onboarding.bind(roomieController));
 router.get('/session', requireKindeAuth, roomieController.checkSession);
 
-// Endpoint para el botón "Mensaje" de la tarjeta
+
 router.post('/api/v1/roomies/conversations', roomieController.initializeConversation.bind(roomieController));
 
-// Endpoint para cargar el historial de chats
+
+router.get('/api/v1/roomies/conversations/user/:userId', roomieController.getInbox.bind(roomieController));
+
+
 router.get('/api/v1/roomies/conversations/:conversationId/messages', roomieController.getHistory.bind(roomieController));
 
-// Endpoint para enviar un mensaje
+
 router.post('/api/v1/roomies/conversations/:conversationId/messages', roomieController.sendMessage.bind(roomieController));
 
-// Endpoint para publicar un nuevo c/espacio (Libre de Kinde)
+
 router.post(
   '/api/v1/roomies/spaces',
   roomieController.createSpace.bind(roomieController)
 );
 
-// Endpoint para listar los espacios disponibles (dashboard de exploración)
+
 router.get(
   '/api/v1/roomies/spaces',
   roomieController.listSpaces.bind(roomieController)
+);
+
+
+router.post(
+  '/api/v1/roomies/spaces/:id/requests',
+  roomieController.requestToJoin.bind(roomieController)
+);
+router.get(
+  '/api/v1/roomies/requests',
+  roomieController.listPendingRequests.bind(roomieController)
+);
+router.patch(
+  '/api/v1/roomies/requests/:id',
+  roomieController.resolveRequest.bind(roomieController)
+);
+router.get(
+  '/api/v1/roomies/departments/:id/members',
+  roomieController.getDepartmentMembers.bind(roomieController)
+);
+
+
+router.put(
+  '/api/v1/roomies/spaces/:id',
+  requireKindeAuth,
+  roomieController.updateSpace.bind(roomieController)
+);
+router.delete(
+  '/api/v1/roomies/spaces/:id',
+  requireKindeAuth,
+  roomieController.deleteSpace.bind(roomieController)
 );
 
 export default router;
