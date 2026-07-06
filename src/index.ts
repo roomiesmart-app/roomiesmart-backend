@@ -35,7 +35,7 @@ const allowedOrigins = [
   'https://prod.roomiesmart.lat',
   'http://prod.roomiesmart.lat',
 
-  // Orígenes dinámicos inyectados vía variables de entorno (.env)
+  
   process.env.CLIENT_ORIGIN
 ].filter(Boolean) as string[];
 const corsOptions: CorsOptions = {
@@ -47,7 +47,7 @@ const corsOptions: CorsOptions = {
       callback(new Error('Bloqueado por CORS: Origen no autorizado'));
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   credentials: true 
 };
 

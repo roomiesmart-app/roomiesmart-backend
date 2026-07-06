@@ -53,6 +53,59 @@ export class SupabaseChatAdapter implements IChatRepository {
     return data || [];
   }
 
+  public async listUserConversations(userId: string): Promise<any[]> {
+   
+    const { data: myChats, error: myChatsError } = await supabase
+      .from('conversation_participants')
+      .select('conversation_id')
+      .eq('user_id', userId);
+
+    if (myChatsError) throw new Error(myChatsError.message);
+
+    const chatIds = (myChats || []).map(c => c.conversation_id);
+    if (chatIds.length === 0) return [];
+
+  
+    const { data: others, error: othersError } = await supabase
+      .from('conversation_participants')
+      .select('conversation_id, user_id, users ( id, email )')
+      .in('conversation_id', chatIds)
+      .neq('user_id', userId);
+
+    if (othersError) throw new Error(othersError.message);
+
+   
+    const { data: messages, error: msgError } = await supabase
+      .from('messages')
+      .select('conversation_id, content, sender_id, created_at')
+      .in('conversation_id', chatIds)
+      .order('created_at', { ascending: false });
+
+    if (msgError) throw new Error(msgError.message);
+
+    const lastByConversation = new Map<string, any>();
+    for (const message of messages || []) {
+      if (!lastByConversation.has(message.conversation_id)) {
+        lastByConversation.set(message.conversation_id, message);
+      }
+    }
+
+    return chatIds
+      .map(id => {
+        const other = (others || []).find(o => o.conversation_id === id);
+        return {
+          conversationId: id,
+          participant: (other as any)?.users ?? null,
+          lastMessage: lastByConversation.get(id) ?? null
+        };
+      })
+      .sort((a, b) => {
+        const ta = a.lastMessage ? new Date(a.lastMessage.created_at).getTime() : 0;
+        const tb = b.lastMessage ? new Date(b.lastMessage.created_at).getTime() : 0;
+        return tb - ta;
+      });
+  }
+
   public async saveMessage(conversationId: string, senderId: string, content: string): Promise<any> {
     const { data, error } = await supabase
       .from('messages')
