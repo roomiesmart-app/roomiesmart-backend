@@ -14,7 +14,9 @@ import { GetMessagesUseCase } from '../../application/use-cases/get-messages.js'
 import { SupabaseChatAdapter } from '../adapters/supabase-chat.adapter.js';
 import { supabase } from '../../../../core/database.js';
 import { PublishSpaceUseCase } from '../../application/use-cases/publish-space.js';
+import { ListSpacesUseCase } from '../../application/use-cases/list-spaces.js';
 import { SupabaseSpaceAdapter } from '../adapters/supabase-space.adapter.js';
+import { PublishSpaceDto } from '../../domain/dtos/publish-space.dto.js';
 
 export class RoomieController {
   public async register(req: Request, res: Response): Promise<void> {
@@ -250,21 +252,50 @@ export class RoomieController {
     try {
       // Como quitamos Kinde, el Front debe enviar obligatoriamente el ownerId
       const { ownerId, ...payload } = req.body;
+      const dto = plainToInstance(PublishSpaceDto, payload);
 
       const useCase = new PublishSpaceUseCase(new SupabaseSpaceAdapter());
-      const newSpace = await useCase.execute(ownerId, payload);
+      const newSpace = await useCase.execute(ownerId, dto);
 
       res.status(201).json(newSpace);
     } catch (error: any) {
+      // 🚨 Log SIEMPRE, antes de responder: sin esto el 500 era "silencioso"
+      console.error('🚨 Error crítico publicando:', error);
+      logger.error(`Error publicando espacio: ${error.message}`);
+
       // Capturamos los errores de validación (incluyendo el de las 5 fotos) para devolver un 400
       if (
-        error.message.includes('Faltan campos') || 
-        error.message.includes('obligatorio') || 
-        error.message.includes('5 fotos')
+        error.message.includes('Faltan campos') ||
+        error.message.includes('obligatorio') ||
+        error.message.includes('obligatoria') ||
+        error.message.includes('al menos') ||
+        error.message.includes('5 fotos') ||
+        error.message.includes('mayor a cero')
       ) {
         res.status(400).json({ error: 'BAD_REQUEST', message: error.message });
         return;
       }
+
+      // FK inválida (ciudad u owner inexistente) => es culpa del payload, no del servidor
+      if (error.message.includes('violates foreign key constraint')) {
+        res.status(400).json({
+          error: 'BAD_REQUEST',
+          message: `Referencia inválida en la publicación: ${error.message}`,
+        });
+        return;
+      }
+
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+  public async listSpaces(_req: Request, res: Response): Promise<void> {
+    try {
+      const useCase = new ListSpacesUseCase(new SupabaseSpaceAdapter());
+      const spaces = await useCase.execute();
+      res.status(200).json({ data: spaces });
+    } catch (error: any) {
+      logger.error(`Error listando espacios: ${error.message}`);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }
