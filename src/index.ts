@@ -12,6 +12,7 @@ const app = express();
 app.use(express.json());
 
 const allowedOrigins = [
+  'http://localhost:3002',
   'http://localhost:3001', // Local with Vite
   'http://localhost:3000',
   

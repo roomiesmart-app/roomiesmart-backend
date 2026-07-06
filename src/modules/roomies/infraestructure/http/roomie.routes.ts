@@ -28,5 +28,11 @@ router.post(
   roomieController.createSpace.bind(roomieController)
 );
 
+// Endpoint para listar los espacios disponibles (dashboard de exploración)
+router.get(
+  '/api/v1/roomies/spaces',
+  roomieController.listSpaces.bind(roomieController)
+);
+
 export default router;
 
