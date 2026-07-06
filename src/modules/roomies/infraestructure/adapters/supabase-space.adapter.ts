@@ -26,6 +26,25 @@ export class SupabaseSpaceAdapter implements ISpaceRepository {
         `${error.message}${error.details ? ` — ${error.details}` : ''}`
       );
     }
+
+    // Espejamos el espacio en `departments` con el MISMO uuid:
+    // department_expenses.department_id -> departments.id (FK), así el
+    // id del espacio publicado sirve directamente para el módulo de finanzas.
+    const { error: deptError } = await supabase.from('departments').insert({
+      id: data.id,
+      name: data.title,
+      address: data.location_address,
+      created_by: data.owner_id
+    });
+    // 23505 = ya existe (re-publicación); cualquier otro error no debe
+    // tumbar la publicación, solo lo registramos.
+    if (deptError && deptError.code !== '23505') {
+      console.error(
+        '⚠️ No se pudo espejar el espacio en departments (finanzas):',
+        deptError.message
+      );
+    }
+
     return data;
   }
 

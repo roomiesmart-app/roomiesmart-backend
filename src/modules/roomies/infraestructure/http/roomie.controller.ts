@@ -174,6 +174,17 @@ export class RoomieController {
       const settings = await adapter.getProfileSettings(userId);
       console.log(`📢 [FINANZAS 4/4] Presupuesto máximo del usuario: $${settings?.maxBudget || 250}`);
 
+      // Departamento REAL del usuario: la fila de `departments` más reciente
+      // que él creó (se genera automáticamente al publicar un espacio).
+      // Si no tiene, devolvemos null y el frontend muestra el estado vacío.
+      const { data: department } = await supabase
+        .from('departments')
+        .select('id')
+        .eq('created_by', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
       res.status(200).json({
         data: {
           id: userId,
@@ -184,8 +195,7 @@ export class RoomieController {
           expenseManagement: settings?.expenseManagement ?? null,
           sharedItems: settings?.sharedItems ?? [],
           preferredCommonAreas: settings?.preferredCommonAreas ?? [],
-          // El ID de departamento temporal hasta que asigne casas reales
-          departmentId: "b44a4eae-1dd3-4e3d-a21f-e438fed48d36"
+          departmentId: department?.id ?? null
         }
       });
     } catch (error: any) {
