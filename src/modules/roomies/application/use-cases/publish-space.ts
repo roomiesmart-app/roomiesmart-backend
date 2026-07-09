@@ -1,31 +1,37 @@
 import type { ISpaceRepository } from '../ports/space.repository.js';
+import type { PublishSpaceDto } from '../../domain/dtos/publish-space.dto.js';
 
 export class PublishSpaceUseCase {
   constructor(private readonly spaceRepository: ISpaceRepository) {}
 
-  public async execute(ownerId: string, payload: any): Promise<any> {
+  public async execute(ownerId: string, payload: PublishSpaceDto): Promise<any> {
     if (!ownerId) throw new Error('El ID del dueño es obligatorio.');
-    
-    if (!payload.title || !payload.monthlyPrice || !payload.locationAddress) {
-      throw new Error('Faltan campos obligatorios (título, precio o dirección).');
-    }
 
-   
-    if (!payload.images || !Array.isArray(payload.images) || payload.images.length < 5) {
-      throw new Error('Debes subir al menos 5 fotos de tu departamento.');
-    }
+    // La validación de campos (incluido el mínimo de 5 fotos) vive en el DTO
+    payload.validate();
 
     const newSpace = {
       owner_id: ownerId,
-      city_id: payload.cityId || null,
+      city_id: payload.cityId,
       title: payload.title,
       description: payload.description || '',
       monthly_price: payload.monthlyPrice,
       location_address: payload.locationAddress,
+      neighborhood: payload.neighborhood,
+      space_type: payload.spaceType,
+      common_areas: payload.commonAreas,
+      amenities: payload.amenities,
       images: payload.images,
       is_available: true
     };
 
-    return await this.spaceRepository.create(newSpace);
+    try {
+      return await this.spaceRepository.create(newSpace);
+    } catch (error) {
+      // 🚨 Log en la capa de aplicación con el payload que se intentó insertar
+      console.error('🚨 Error crítico publicando (UseCase):', error);
+      console.error('Payload que falló:', JSON.stringify(newSpace, null, 2));
+      throw error;
+    }
   }
 }

@@ -83,3 +83,38 @@
 [2026-06-29 13:08:07] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
 [2026-07-02 11:48:16] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
 [2026-07-02 11:54:59] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 16:41:35] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 19:47:57] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 19:53:26] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 20:01:44] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 20:02:29] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 20:26:04] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 20:37:46] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 20:37:51] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-02 20:38:51] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 17:51:22] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 17:55:14] WARN: Intento de acceso bloqueado por CORS desde el origen: http://localhost:3001
+[2026-07-05 17:55:14] WARN: Intento de acceso bloqueado por CORS desde el origen: http://localhost:3001
+[2026-07-05 17:55:14] WARN: Intento de acceso bloqueado por CORS desde el origen: http://localhost:3001
+[2026-07-05 18:00:14] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 18:34:47] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 18:34:57] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 18:35:10] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 18:35:28] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 18:35:38] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 18:42:35] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 19:41:11] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 19:41:23] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 19:41:36] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 19:41:52] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-05 22:37:57] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-06 00:00:01] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-06 01:23:44] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-06 08:03:38] INFO: Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)
+[2026-07-07 18:58:33] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-07 19:00:23] INFO: 🔌 WS conectado: F03gBTMD7H8tFDQsAAAB
+[2026-07-07 19:01:24] INFO: 🔌 WS desconectado: F03gBTMD7H8tFDQsAAAB (transport close)
+[2026-07-07 19:02:26] INFO: 🔌 WS conectado: dOL6txuLDAjwb4N5AAAD
+[2026-07-07 19:03:09] INFO: 🔌 WS desconectado: dOL6txuLDAjwb4N5AAAD (transport close)
+[2026-07-07 19:58:06] INFO: 🔌 WS conectado: UaUyQe9Zo_rAJoZFAAAF
+[2026-07-07 19:58:36] INFO: 🔌 WS desconectado: UaUyQe9Zo_rAJoZFAAAF (transport close)

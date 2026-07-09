@@ -128,7 +128,10 @@ export class SupabaseUserAdapter implements IUserRepository {
       user_id: userId,
       min_budget: dto.financial?.budgetRange?.min || 100,
       max_budget: dto.financial?.budgetRange?.max || 250,
-      room_type: dto.financial?.roomType || 'privada'
+      room_type: dto.financial?.roomType || 'privada',
+      expense_management: dto.financial?.expenseManagement || 'division-digital',
+      shared_items: dto.financial?.sharedItems || [],
+      preferred_common_areas: dto.financial?.preferredCommonAreas || []
     });
 
     return authUser;
@@ -230,14 +233,22 @@ export class SupabaseUserAdapter implements IUserRepository {
 
   public async getProfileSettings(userId: string): Promise<any> {
     const { data: lifestyleData } = await supabase.from('user_lifestyle').select('is_early_bird').eq('user_id', userId).single();
-    const { data: financialData } = await supabase.from('user_financial_preferences').select('min_budget, max_budget').eq('user_id', userId).single();
+    const { data: financialData } = await supabase
+      .from('user_financial_preferences')
+      .select('min_budget, max_budget, room_type, expense_management, shared_items, preferred_common_areas')
+      .eq('user_id', userId)
+      .single();
 
     return {
       userId,
       isEarlyBird: lifestyleData?.is_early_bird ?? null,
       hobbies: [],
       minBudget: financialData?.min_budget ?? null,
-      maxBudget: financialData?.max_budget ?? null
+      maxBudget: financialData?.max_budget ?? null,
+      roomType: financialData?.room_type ?? null,
+      expenseManagement: financialData?.expense_management ?? null,
+      sharedItems: financialData?.shared_items ?? [],
+      preferredCommonAreas: financialData?.preferred_common_areas ?? []
     };
   }
 }
