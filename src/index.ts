@@ -1,10 +1,12 @@
 import 'reflect-metadata';
+import http from 'http';
 import express from 'express';
 import cors, { type CorsOptions } from 'cors';
 import roomieRoutes from './modules/roomies/infraestructure/http/roomie.routes.js';
 import profileRoutes from './modules/roomies/infraestructure/http/profile.routes.js';
 import { logger } from './core/logger.js';
 import expenseRoutes from './modules/expenses/infraestructure/http/expense.routes.js';
+import { initChatGateway } from './modules/roomies/infraestructure/ws/chat.gateway.js';
 
 const app = express();
 
@@ -58,6 +60,9 @@ app.use(roomieRoutes);
 app.use(profileRoutes);
 app.use('/api/expenses', expenseRoutes);
 
-app.listen(3000, '0.0.0.0', () => {
-  logger.info('Servidor corriendo en puerto 3000 (Escuchando en 0.0.0.0 para Docker)');
+const server = http.createServer(app);
+initChatGateway(server, allowedOrigins);
+
+server.listen(3000, '0.0.0.0', () => {
+  logger.info('Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)');
 });
