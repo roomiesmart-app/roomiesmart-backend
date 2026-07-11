@@ -118,3 +118,16 @@
 [2026-07-07 19:03:09] INFO: 🔌 WS desconectado: dOL6txuLDAjwb4N5AAAD (transport close)
 [2026-07-07 19:58:06] INFO: 🔌 WS conectado: UaUyQe9Zo_rAJoZFAAAF
 [2026-07-07 19:58:36] INFO: 🔌 WS desconectado: UaUyQe9Zo_rAJoZFAAAF (transport close)
+[2026-07-09 10:18:52] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-09 10:37:38] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-11 15:59:48] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-11 16:10:45] ERROR: Fallo enviando email a aa1034fc-f7f4-4779-ade4-b05f92aa25f0: self-signed certificate in certificate chain
+[2026-07-11 16:14:08] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-11 16:14:48] ERROR: Fallo enviando email a 235f3043-c260-47f2-a416-da352db41149: Invalid login: 535 5.7.139 Authentication unsuccessful, SmtpClientAuthentication is disabled for the Mailbox. Visit https://aka.ms/smtp_auth_disabled for more information. [BN9PR03CA0665.namprd03.prod.outlook.com 2026-07-11T21:14:49.160Z 08DEDF0E530A161B]
+[2026-07-11 16:15:13] ERROR: Fallo enviando email a aa1034fc-f7f4-4779-ade4-b05f92aa25f0: Invalid login: 535 5.7.139 Authentication unsuccessful, SmtpClientAuthentication is disabled for the Mailbox. Visit https://aka.ms/smtp_auth_disabled for more information. [BN9PR03CA0856.namprd03.prod.outlook.com 2026-07-11T21:15:13.802Z 08DEDF8C92BCA7C7]
+[2026-07-11 16:27:12] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-11 16:27:59] ERROR: Fallo enviando email a 235f3043-c260-47f2-a416-da352db41149: Invalid login: 535 5.7.139 Authentication unsuccessful, SmtpClientAuthentication is disabled for the Mailbox. Visit https://aka.ms/smtp_auth_disabled for more information. [BN9PR03CA0895.namprd03.prod.outlook.com 2026-07-11T21:27:59.662Z 08DEDEFCBF4C9F7F]
+[2026-07-11 16:28:25] ERROR: Fallo enviando email a aa1034fc-f7f4-4779-ade4-b05f92aa25f0: Invalid login: 535 5.7.139 Authentication unsuccessful, SmtpClientAuthentication is disabled for the Mailbox. Visit https://aka.ms/smtp_auth_disabled for more information. [BN9PR03CA0068.namprd03.prod.outlook.com 2026-07-11T21:28:26.239Z 08DEDF1E35C8C914]
+[2026-07-11 17:42:40] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-11 17:43:34] INFO: Email "Solicitud rechazada" enviado a jdplaza@uce.edu.ec
+[2026-07-11 17:43:51] INFO: Email "Nueva solicitud de unión a tu espacio" enviado a eflarrea@uce.edu.ec

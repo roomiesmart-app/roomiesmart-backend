@@ -5,10 +5,10 @@ import { RegisterExpenseDto } from '../../domain/dtos/register-expense.dto.js';
 import { LogExpenseUseCase } from '../../application/use-cases/log-expense.js';
 import type { IExpenseRepository } from '../../application/ports/expense.repository.js';
 export class ExpenseController {
-  
+
   constructor(
     private readonly logExpenseUseCase: LogExpenseUseCase,
-    private readonly expenseRepository: IExpenseRepository 
+    private readonly expenseRepository: IExpenseRepository
   ) {}
 
   public async registerExpense(req: Request, res: Response): Promise<void> {

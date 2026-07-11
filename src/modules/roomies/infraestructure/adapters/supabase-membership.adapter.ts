@@ -18,7 +18,7 @@ export class SupabaseMembershipAdapter implements IMembershipRepository {
       .single();
 
     if (error) {
-      
+
       if (error.code === '23505') {
         throw new Error('Ya tienes una solicitud pendiente para este espacio.');
       }
@@ -88,7 +88,6 @@ export class SupabaseMembershipAdapter implements IMembershipRepository {
       .from('department_members')
       .insert({ department_id: departmentId, user_id: userId, role });
 
-    // 23505 = ya era miembro: lo tratamos como éxito (idempotente)
     if (error && error.code !== '23505') {
       throw new Error(error.message);
     }

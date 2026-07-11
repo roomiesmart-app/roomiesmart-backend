@@ -10,7 +10,6 @@ export class UnpublishSpaceUseCase {
     const space = await this.spaceRepository.findById(spaceId);
     if (!space) throw new Error('El espacio no fue encontrado.');
 
-
     if (space.owner_id !== requesterId) {
       throw new Error('Solo el dueño de la publicación puede darla de baja.');
     }

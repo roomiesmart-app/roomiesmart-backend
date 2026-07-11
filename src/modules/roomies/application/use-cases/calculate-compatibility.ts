@@ -30,7 +30,7 @@ export class CalculateCompatibilityUseCase {
     const candidates = allProfiles.filter((p: any) => p && p.id !== currentUser.id);
     if (candidates.length === 0) return [];
 
-    const hasActiveFilters = filters && Object.values(filters).some(val => 
+    const hasActiveFilters = filters && Object.values(filters).some(val =>
       val !== undefined && val !== null && (Array.isArray(val) ? val.length > 0 : val !== '')
     );
 
@@ -40,11 +40,11 @@ export class CalculateCompatibilityUseCase {
     const aiRankings = await this.aiService.rankCandidates(currentUser, candidates);
 
     console.log(`\n📊 TABLA DE CONVIVENCIA UNIVERSITARIA REAL (SUMA CPU: 100%):`);
-    
+
     const auditTable = candidates.map(c => {
       const ai = aiRankings.find((r: any) => r && r.candidateId === c.id);
       const b = ai?.breakdown || {};
-      
+
       const p = Number(b.presupuesto ?? 20);
       const t = Number(b.tabaco ?? 20);
       const l = Number(b.limpieza ?? 20);
@@ -54,7 +54,7 @@ export class CalculateCompatibilityUseCase {
       const cpuTotalScore = ai?.veto ? 0 : Math.min(100, p + t + l + h + m);
 
       return {
-        "Candidato": c.fullName.length > 15 ? c.fullName.substring(0, 15) + '...' : c.fullName, 
+        "Candidato": c.fullName.length > 15 ? c.fullName.substring(0, 15) + '...' : c.fullName,
         "Presup.(20)": p,
         "Tabaco(20)": t,
         "Limp.(20)": l,
@@ -72,12 +72,12 @@ export class CalculateCompatibilityUseCase {
       .map((candidate: any) => {
         const aiResult = aiRankings.find((r: any) => r && r.candidateId === candidate.id);
         const b = aiResult?.breakdown || {};
-        
-        const realScore = aiResult?.veto ? 0 : Math.min(100, 
+
+        const realScore = aiResult?.veto ? 0 : Math.min(100,
           Number(b.presupuesto ?? 20) + Number(b.tabaco ?? 20) + Number(b.limpieza ?? 20) + Number(b.hobbies ?? 20) + Number(b.musica ?? 20)
         );
 
-        // 1. Capturamos el dinero real desde la base de datos
+
         const dbMin = candidate?.preferences?.financial?.budgetRange?.min ?? 180;
         const dbMax = candidate?.preferences?.financial?.budgetRange?.max ?? 250;
         const realMoney = Number(dbMax > 150 ? dbMax : dbMin);
@@ -86,7 +86,7 @@ export class CalculateCompatibilityUseCase {
         const smokePref = candidate?.preferences?.social?.smokingPreference || 'No fumo';
         const rType = candidate?.roomType || candidate?.preferences?.financial?.roomType || 'Privada';
 
-        // 🔫 TÉCNICA ESCOPETA: Inyectamos el dinero real en el 100% de nombres posibles
+
         const formattedCandidate = {
           ...candidate,
           id: candidate.id,
@@ -94,7 +94,7 @@ export class CalculateCompatibilityUseCase {
           location: candidate.location || 'Quito, Ecuador',
           roomType: rType,
 
-          // Si el front pide plano:
+
           budget: realMoney,
           maxBudget: realMoney,
           minBudget: dbMin,
@@ -105,7 +105,7 @@ export class CalculateCompatibilityUseCase {
           amount: realMoney,
           monthly_budget: realMoney,
 
-          // Si el front pide anidado:
+
           preferences: {
             ...candidate.preferences,
             financial: {
@@ -131,9 +131,9 @@ export class CalculateCompatibilityUseCase {
           }
         };
 
-        return { 
-          candidate: formattedCandidate, 
-          compatibilityScore: realScore, 
+        return {
+          candidate: formattedCandidate,
+          compatibilityScore: realScore,
           aiExplanation: aiResult?.veto ? 'Incompatible: Violación estricta de preferencia de tabaco.' : (aiResult?.reason || 'Compatible según convivencia.')
         };
       })
