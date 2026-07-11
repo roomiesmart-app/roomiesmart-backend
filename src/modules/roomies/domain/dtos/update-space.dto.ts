@@ -10,7 +10,6 @@ export class UpdateSpaceDto {
   amenities?: string[];
   images?: string[];
 
-
   public validate(): void {
     if (this.title !== undefined && !this.title.trim()) {
       throw new Error('El título no puede quedar vacío.');

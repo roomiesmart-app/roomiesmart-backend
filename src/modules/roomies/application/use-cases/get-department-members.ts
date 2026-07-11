@@ -12,7 +12,6 @@ export class GetDepartmentMembersUseCase {
 
     const members = await this.membershipRepository.listMembers(departmentId);
 
-
     return {
       members,
       count: members.length,

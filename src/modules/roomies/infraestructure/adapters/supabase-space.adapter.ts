@@ -1,7 +1,6 @@
 import { supabase } from '../../../../core/database.js';
 import type { ISpaceRepository } from '../../application/ports/space.repository.js';
 
-
 const SPACES_TABLE = 'spaces';
 
 export class SupabaseSpaceAdapter implements ISpaceRepository {
@@ -13,7 +12,7 @@ export class SupabaseSpaceAdapter implements ISpaceRepository {
       .single();
 
     if (error) {
-      
+
       console.error(`🚨 [SupabaseSpaceAdapter] Insert en "${SPACES_TABLE}" falló:`, {
         message: error.message,
         details: error.details,
@@ -25,7 +24,6 @@ export class SupabaseSpaceAdapter implements ISpaceRepository {
       );
     }
 
-   
     const { error: deptError } = await supabase.from('departments').insert({
       id: data.id,
       name: data.title,
@@ -74,7 +72,6 @@ export class SupabaseSpaceAdapter implements ISpaceRepository {
       .single();
 
     if (error) throw new Error(error.message);
-
 
     if (patch.title !== undefined || patch.location_address !== undefined) {
       const mirror: any = {};

@@ -5,7 +5,7 @@ export class GetMatchmakingProfilesUseCase {
   constructor(private readonly userRepository: IUserRepository) {}
 
   public async execute(): Promise<MatchmakingCardDto[]> {
-    
+
     return await this.userRepository.getProfilesForMatchmaking();
   }
 }
