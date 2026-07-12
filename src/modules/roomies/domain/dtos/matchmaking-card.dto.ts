@@ -6,14 +6,14 @@ export interface MatchmakingCardDto {
   preferences: {
     profile: { age: number; gender: string };
     lifestyle: { isEarlyBird: boolean; cleaningFrequency: string };
-    social: { 
-      hobbies: string[]; 
-      musicGenres: string[]; 
-      petPreference: string; 
-      smokingPreference: string; 
+    social: {
+      hobbies: string[];
+      musicGenres: string[];
+      petPreference: string;
+      smokingPreference: string;
     };
-    financial: { 
-      budgetRange: { min: number; max: number } 
+    financial: {
+      budgetRange: { min: number; max: number }
     };
   };
   ai_embedding: number[] | null;

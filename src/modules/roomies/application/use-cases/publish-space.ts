@@ -7,7 +7,6 @@ export class PublishSpaceUseCase {
   public async execute(ownerId: string, payload: PublishSpaceDto): Promise<any> {
     if (!ownerId) throw new Error('El ID del dueño es obligatorio.');
 
-    // La validación de campos (incluido el mínimo de 5 fotos) vive en el DTO
     payload.validate();
 
     const newSpace = {
@@ -28,7 +27,7 @@ export class PublishSpaceUseCase {
     try {
       return await this.spaceRepository.create(newSpace);
     } catch (error) {
-      // 🚨 Log en la capa de aplicación con el payload que se intentó insertar
+
       console.error('🚨 Error crítico publicando (UseCase):', error);
       console.error('Payload que falló:', JSON.stringify(newSpace, null, 2));
       throw error;

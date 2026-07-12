@@ -7,16 +7,16 @@ export class SupabaseUserAdapter implements IUserRepository {
 
   private async getOrCreateCatalogId(tableName: string, nameValue: string | undefined): Promise<string | null> {
     if (!nameValue) return null;
-    
+
     let { data } = await supabase.from(tableName).select('id').ilike('name', nameValue).single();
-    
+
     if (!data) {
       const { data: newData, error } = await supabase
         .from(tableName)
         .insert({ name: nameValue })
         .select('id')
         .single();
-        
+
       if (error) throw new Error(`Error en catálogo ${tableName}: ${error.message}`);
       data = newData;
     }
@@ -30,7 +30,7 @@ export class SupabaseUserAdapter implements IUserRepository {
         name: user.name,
         email: user.email,
         password_hash: user.password_hash,
-        created_at: user.created_at.toISOString() 
+        created_at: user.created_at.toISOString()
       })
       .select('id')
       .single();
@@ -170,7 +170,7 @@ export class SupabaseUserAdapter implements IUserRepository {
       const cardObj: any = {
         id: user.id,
         fullName: user.name || "Estudiante UCE",
-        location: profile?.birth_city_id ? 'Quito, Ecuador' : 'Ubicación no especificada', 
+        location: profile?.birth_city_id ? 'Quito, Ecuador' : 'Ubicación no especificada',
         roomType: financial?.room_type ?? 'privada',
         preferences: {
           profile: {
@@ -212,13 +212,13 @@ export class SupabaseUserAdapter implements IUserRepository {
     if (error || !data) return null;
 
     const user = User.create(
-      data.name, 
-      data.email, 
-      data.password_hash, 
-      {} as any 
+      data.name,
+      data.email,
+      data.password_hash,
+      {} as any
     );
-    
-    (user as any).id = data.id; 
+
+    (user as any).id = data.id;
     return user;
   }
 

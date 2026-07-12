@@ -1,4 +1,4 @@
-import { supabase } from '../../../../core/database.js'; 
+import { supabase } from '../../../../core/database.js';
 import type { IExpenseRepository } from '../../application/ports/expense.repository.js';
 import type { ExpenseModel } from '../../domain/expense.model.js';
 

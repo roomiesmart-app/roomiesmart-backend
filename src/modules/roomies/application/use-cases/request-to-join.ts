@@ -1,16 +1,23 @@
 import type { IMembershipRepository } from '../ports/membership.repository.js';
 import type { ISpaceRepository } from '../ports/space.repository.js';
 import type { INotificationRepository } from '../ports/notification.repository.js';
-import type { CreateSpaceRequestDto } from '../../domain/dtos/space-request.dto.js';
+import type { IEmailService } from '../ports/email.service.js';
+
+export interface RequestToJoinPayload {
+  requesterId: string;
+  message?: string;
+  validate(): void;
+}
 
 export class RequestToJoinUseCase {
   constructor(
     private readonly membershipRepository: IMembershipRepository,
     private readonly spaceRepository: ISpaceRepository,
-    private readonly notificationRepository: INotificationRepository
+    private readonly notificationRepository: INotificationRepository,
+    private readonly emailService: IEmailService
   ) {}
 
-  public async execute(spaceId: string, payload: CreateSpaceRequestDto): Promise<any> {
+  public async execute(spaceId: string, payload: RequestToJoinPayload): Promise<any> {
     if (!spaceId) throw new Error('El ID del espacio es obligatorio.');
     payload.validate();
 
@@ -20,7 +27,6 @@ export class RequestToJoinUseCase {
     if (space.owner_id === payload.requesterId) {
       throw new Error('No puedes solicitar unirte a tu propio espacio.');
     }
-
 
     const alreadyMember = await this.membershipRepository.isMember(
       spaceId,
@@ -43,6 +49,11 @@ export class RequestToJoinUseCase {
       body: `Alguien quiere unirse a "${space.title}".`,
       resourceId: request.id
     });
+    await this.emailService.sendToUser(
+      space.owner_id,
+      'Nueva solicitud de unión a tu espacio',
+      `Alguien quiere unirse a "${space.title}". Entra a RoomieSmart para aceptar o rechazar la solicitud.`
+    );
 
     return request;
   }

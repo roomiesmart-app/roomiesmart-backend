@@ -5,17 +5,6 @@ import { SupabaseNotificationAdapter } from '../adapters/supabase-notification.a
 import { supabase } from '../../../../core/database.js';
 import { logger } from '../../../../core/logger.js';
 
-// ============================================================
-// Gateway WebSocket (Socket.io) — Arquitectura Hexagonal:
-// es OTRO adaptador de entrada (driving adapter), igual que el
-// controlador HTTP. La persistencia sigue pasando por el MISMO
-// SupabaseChatAdapter: la lógica de dominio no se duplica.
-//
-// DevOps: se adjunta al servidor HTTP existente (puerto 3000),
-// NO abre puertos nuevos. Ver docs/DEVOPS-WEBSOCKETS.md en el
-// repo del frontend para el bloque de nginx.
-// ============================================================
-
 interface SendMessagePayload {
   conversationId: string;
   senderId: string;
@@ -71,11 +60,8 @@ export function initChatGateway(
           String(content)
         );
 
-        // Difunde a todos los sockets unidos a la conversación (incluido
-        // el emisor, que deduplica por id en el cliente).
         io.to(`conversation:${conversationId}`).emit('new_message', message);
 
-        // Notificación best-effort al resto de participantes (campanita)
         try {
           const { data: participants } = await supabase
             .from('conversation_participants')
