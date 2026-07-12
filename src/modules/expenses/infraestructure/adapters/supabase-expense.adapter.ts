@@ -11,7 +11,8 @@ export class SupabaseExpenseAdapter implements IExpenseRepository {
         department_id: expense.departmentId,
         payer_id: expense.payerId,
         amount: expense.amount,
-        description: expense.description
+        description: expense.description,
+        participants: expense.participants ?? null
       })
       .select()
       .single();
@@ -24,6 +25,7 @@ export class SupabaseExpenseAdapter implements IExpenseRepository {
       payerId: data.payer_id,
       amount: data.amount,
       description: data.description,
+      participants: data.participants ?? undefined,
       expenseDate: data.expense_date
     };
   }
@@ -37,6 +39,7 @@ export class SupabaseExpenseAdapter implements IExpenseRepository {
         payer_id,
         amount,
         description,
+        participants,
         expense_date,
         users!department_expenses_payer_id_fkey (
           id,
@@ -54,6 +57,7 @@ export class SupabaseExpenseAdapter implements IExpenseRepository {
       payerId: row.payer_id,
       amount: row.amount,
       description: row.description,
+      participants: row.participants ?? undefined,
       expenseDate: row.expense_date,
       payerDetails: row.users
     }));
