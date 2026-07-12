@@ -16,6 +16,7 @@ import { SupabaseChatAdapter } from '../adapters/supabase-chat.adapter.js';
 import { supabase } from '../../../../core/database.js';
 import { PublishSpaceUseCase } from '../../application/use-cases/publish-space.js';
 import { ListSpacesUseCase } from '../../application/use-cases/list-spaces.js';
+import { ListUserDepartmentsUseCase } from '../../application/use-cases/list-user-departments.js';
 import { UpdateSpaceUseCase } from '../../application/use-cases/update-space.js';
 import { UnpublishSpaceUseCase } from '../../application/use-cases/unpublish-space.js';
 import { SupabaseSpaceAdapter } from '../adapters/supabase-space.adapter.js';
@@ -347,6 +348,26 @@ export class RoomieController {
       res.status(200).json({ data: spaces });
     } catch (error: any) {
       logger.error(`Error listando espacios: ${error.message}`);
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+  public async listUserDepartments(req: Request, res: Response): Promise<void> {
+    try {
+      const rawId = req.params.userId;
+      const userId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+      if (!userId) {
+        res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta userId' });
+        return;
+      }
+
+      const useCase = new ListUserDepartmentsUseCase(new SupabaseSpaceAdapter());
+      const departments = await useCase.execute(userId);
+
+      res.status(200).json({ data: departments });
+    } catch (error: any) {
+      logger.error(`Error listando departamentos del usuario: ${error.message}`);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }

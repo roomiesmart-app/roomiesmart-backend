@@ -131,3 +131,14 @@
 [2026-07-11 17:42:40] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
 [2026-07-11 17:43:34] INFO: Email "Solicitud rechazada" enviado a jdplaza@uce.edu.ec
 [2026-07-11 17:43:51] INFO: Email "Nueva solicitud de unión a tu espacio" enviado a eflarrea@uce.edu.ec
+[2026-07-11 19:07:09] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-11 19:09:06] INFO: Email "Nueva solicitud de unión a tu espacio" enviado a eflarrea@uce.edu.ec
+[2026-07-12 13:03:21] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-12 13:08:36] INFO: Email "¡Solicitud aceptada!" enviado a rpchapi@uce.edu.ec
+[2026-07-12 13:45:32] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-12 13:46:53] INFO: Email "Recordatorio de pago pendiente 💰" enviado a rpchapi@uce.edu.ec
+[2026-07-12 13:59:16] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-12 13:59:24] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-12 13:59:57] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-12 14:00:09] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
+[2026-07-12 14:00:13] INFO: Servidor HTTP + WebSocket corriendo en puerto 3000 (0.0.0.0 para Docker)
