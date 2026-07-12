@@ -10,26 +10,26 @@ import { initChatGateway } from './modules/roomies/infraestructure/ws/chat.gatew
 
 const app = express();
 
-// Middlewares
+
 app.use(express.json());
 
 const allowedOrigins = [
   'http://localhost:3002',
-  'http://localhost:3001', // Local with Vite
+  'http://localhost:3001',
   'http://localhost:3000',
-  
-  'http://52.7.189.106', // Dev
-  'http://52.7.189.106:8080', // Dev 8080
-  
-  'http://52.203.167.254', // QA IP
-  'http://roomiesmartqa.programacionwebuce.net', // Domain QA (Nginx HTTP)
-  'https://roomiesmartqa.programacionwebuce.net', // Domain QA (Cloudflare HTTPS)
-  
-  'http://3.208.173.154', // 🚀 IP cruda de Prod
-  'http://roomiesmartprod.programacionwebuce.net', // Domain Prod (Nginx HTTP)
-  'https://roomiesmartprod.programacionwebuce.net', // Domain Prod (Cloudflare HTTPS)
 
-  // 🔥 NUEVOS DOMINIOS OFICIALES (roomiesmart.lat)
+  'http://52.7.189.106',
+  'http://52.7.189.106:8080',
+
+  'http://52.203.167.254',
+  'http://roomiesmartqa.programacionwebuce.net',
+  'https://roomiesmartqa.programacionwebuce.net',
+
+  'http://3.208.173.154',
+  'http://roomiesmartprod.programacionwebuce.net',
+  'https://roomiesmartprod.programacionwebuce.net',
+
+
   'https://roomiesmart.lat',
   'http://roomiesmart.lat',
   'https://qa.roomiesmart.lat',
@@ -37,7 +37,7 @@ const allowedOrigins = [
   'https://prod.roomiesmart.lat',
   'http://prod.roomiesmart.lat',
 
-  
+
   process.env.CLIENT_ORIGIN
 ].filter(Boolean) as string[];
 const corsOptions: CorsOptions = {
@@ -50,12 +50,12 @@ const corsOptions: CorsOptions = {
     }
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  credentials: true 
+  credentials: true
 };
 
 app.use(cors(corsOptions));
 
-// Endpoints
+
 app.use(roomieRoutes);
 app.use(profileRoutes);
 app.use('/api/expenses', expenseRoutes);

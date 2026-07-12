@@ -2,7 +2,7 @@ import { supabase } from '../../../../core/database.js';
 import type { IChatRepository } from '../../application/ports/chat.repository.js';
 
 export class SupabaseChatAdapter implements IChatRepository {
-  
+
   public async findOrCreateConversation(userId: string, targetUserId: string): Promise<string> {
     const { data: myChats, error: myChatsError } = await supabase
       .from('conversation_participants')
@@ -13,7 +13,7 @@ export class SupabaseChatAdapter implements IChatRepository {
 
     if (myChats && myChats.length > 0) {
       const chatIds = myChats.map(c => c.conversation_id);
-      
+
       const { data: sharedChat } = await supabase
         .from('conversation_participants')
         .select('conversation_id')
@@ -54,7 +54,7 @@ export class SupabaseChatAdapter implements IChatRepository {
   }
 
   public async listUserConversations(userId: string): Promise<any[]> {
-   
+
     const { data: myChats, error: myChatsError } = await supabase
       .from('conversation_participants')
       .select('conversation_id')
@@ -65,7 +65,7 @@ export class SupabaseChatAdapter implements IChatRepository {
     const chatIds = (myChats || []).map(c => c.conversation_id);
     if (chatIds.length === 0) return [];
 
-  
+
     const { data: others, error: othersError } = await supabase
       .from('conversation_participants')
       .select('conversation_id, user_id, users ( id, email )')
@@ -74,7 +74,7 @@ export class SupabaseChatAdapter implements IChatRepository {
 
     if (othersError) throw new Error(othersError.message);
 
-   
+
     const { data: messages, error: msgError } = await supabase
       .from('messages')
       .select('conversation_id, content, sender_id, created_at')

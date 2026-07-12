@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { RoomieController } from './roomie.controller.js';
-import { requireKindeAuth } from '../../../../core/middlewares/kinde-auth.middleware.js'; // Ajusta la ruta si es necesario
+import { requireKindeAuth } from '../../../../core/middlewares/kinde-auth.middleware.js';
 
 const router = Router();
 const roomieController = new RoomieController();
@@ -26,6 +26,11 @@ router.get('/api/v1/roomies/conversations/:conversationId/messages', roomieContr
 router.post('/api/v1/roomies/conversations/:conversationId/messages', roomieController.sendMessage.bind(roomieController));
 
 
+router.get('/api/v1/catalogs/cities', roomieController.getCities.bind(roomieController));
+router.get('/api/v1/catalogs/common-areas', roomieController.getCommonAreas.bind(roomieController));
+router.get('/api/v1/catalogs/amenities', roomieController.getAmenities.bind(roomieController));
+
+
 router.post(
   '/api/v1/roomies/spaces',
   roomieController.createSpace.bind(roomieController)
@@ -35,6 +40,11 @@ router.post(
 router.get(
   '/api/v1/roomies/spaces',
   roomieController.listSpaces.bind(roomieController)
+);
+
+router.get(
+  '/api/v1/roomies/users/:userId/departments',
+  roomieController.listUserDepartments.bind(roomieController)
 );
 
 

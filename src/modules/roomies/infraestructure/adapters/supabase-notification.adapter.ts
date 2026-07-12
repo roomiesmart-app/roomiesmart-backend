@@ -6,7 +6,7 @@ import type {
 
 export class SupabaseNotificationAdapter implements INotificationRepository {
   public async create(notification: NotificationInput): Promise<void> {
-    
+
     const { error } = await supabase.from('notifications').insert({
       user_id: notification.userId,
       type: notification.type,

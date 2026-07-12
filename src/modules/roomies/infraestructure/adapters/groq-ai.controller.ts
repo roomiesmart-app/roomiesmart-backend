@@ -55,14 +55,14 @@ export class GroqAiAdapter implements IAiService {
     try {
       const chatCompletion = await this.groq.chat.completions.create({
         messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-8b-instant', 
-        temperature: 0.1, 
-        response_format: { type: "json_object" } 
+        model: 'llama-3.1-8b-instant',
+        temperature: 0.1,
+        response_format: { type: "json_object" }
       });
 
       const responseContent = chatCompletion.choices[0]?.message?.content || "{}";
       const parsedData = JSON.parse(responseContent);
-      
+
       return parsedData.matches || [];
 
     } catch (error) {

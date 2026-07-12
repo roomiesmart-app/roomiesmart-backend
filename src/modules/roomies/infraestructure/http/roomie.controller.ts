@@ -1,13 +1,13 @@
 import type { Request, Response } from 'express';
-import { plainToInstance } from 'class-transformer'; 
+import { plainToInstance } from 'class-transformer';
 import { RegisterUserUseCase } from '../../application/use-cases/register-user.js';
 import { SupabaseUserAdapter } from '../adapters/supabase-user.adapter.js';
-import { CreateUserDto } from '../../domain/dtos/create-user.dto.js'; 
-import { LoginUserUseCase } from '../../application/use-cases/login-user.js'; 
-import { LoginUserDto } from '../../domain/dtos/login-user.dto.js'; 
+import { CreateUserDto } from '../../domain/dtos/create-user.dto.js';
+import { LoginUserUseCase } from '../../application/use-cases/login-user.js';
+import { LoginUserDto } from '../../domain/dtos/login-user.dto.js';
 import { logger } from '../../../../core/logger.js';
 import { CalculateCompatibilityUseCase } from '../../application/use-cases/calculate-compatibility.js';
-import { GroqAiAdapter } from '../adapters/groq-ai.controller.js'; 
+import { GroqAiAdapter } from '../adapters/groq-ai.controller.js';
 import { OnboardingRequestDto } from '../../domain/dtos/onboarding.dto.js';
 import { FindOrCreateConversationUseCase } from '../../application/use-cases/find-or-create-conversation.js';
 import { GetMessagesUseCase } from '../../application/use-cases/get-messages.js';
@@ -16,6 +16,7 @@ import { SupabaseChatAdapter } from '../adapters/supabase-chat.adapter.js';
 import { supabase } from '../../../../core/database.js';
 import { PublishSpaceUseCase } from '../../application/use-cases/publish-space.js';
 import { ListSpacesUseCase } from '../../application/use-cases/list-spaces.js';
+import { ListUserDepartmentsUseCase } from '../../application/use-cases/list-user-departments.js';
 import { UpdateSpaceUseCase } from '../../application/use-cases/update-space.js';
 import { UnpublishSpaceUseCase } from '../../application/use-cases/unpublish-space.js';
 import { SupabaseSpaceAdapter } from '../adapters/supabase-space.adapter.js';
@@ -26,10 +27,17 @@ import { ResolveJoinRequestUseCase } from '../../application/use-cases/resolve-j
 import { GetDepartmentMembersUseCase } from '../../application/use-cases/get-department-members.js';
 import { SupabaseMembershipAdapter } from '../adapters/supabase-membership.adapter.js';
 import { SupabaseNotificationAdapter } from '../adapters/supabase-notification.adapter.js';
+import { SupabaseCatalogAdapter } from '../adapters/supabase-catalog.adapter.js';
+import { NodemailerEmailAdapter } from '../adapters/nodemailer-email.adapter.js';
+import { cacheGet, cacheSet, cacheDelete } from '../../../../core/memory-cache.js';
 import {
   CreateSpaceRequestDto,
   ResolveSpaceRequestDto
 } from '../../domain/dtos/space-request.dto.js';
+
+const SPACES_CACHE_KEY = 'spaces:available';
+const SPACES_CACHE_TTL_MS = 60_000;
+const CATALOG_CACHE_TTL_MS = 10 * 60_000;
 
 export class RoomieController {
   public async register(req: Request, res: Response): Promise<void> {
@@ -58,36 +66,24 @@ export class RoomieController {
     }
   }
 
-  // =================================================================
-  // 🔥 MATCHMAKING BLINDADO CON DIAGNÓSTICO EN TIEMPO REAL
-  // =================================================================
   public async getMatchmakingCards(req: Request, res: Response): Promise<void> {
     try {
-      console.log("\n📢 [1/4] Petición POST recibida en el controlador!");
-      console.log("DEBUG Body:", JSON.stringify(req.body));
-      
       const incomingId = req.body.userId;
       const filters = req.body.filters || {};
 
       if (!incomingId) {
-        console.error("❌ Error: req.body.userId llegó vacío");
         res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta el userId en el body.' });
         return;
       }
 
-      console.log("📢 [2/4] Instanciando repositorios y IA...");
       const userAdapter = new SupabaseUserAdapter();
       const aiAdapter = new GroqAiAdapter();
       const useCase = new CalculateCompatibilityUseCase(userAdapter, aiAdapter);
-
-      console.log("📢 [3/4] Ejecutando CalculateCompatibilityUseCase...");
       const allMatches = await useCase.execute(incomingId, filters);
 
-      console.log(`📢 [4/4] ¡Éxito! Devolviendo ${allMatches?.length || 0} cartas al frontend.`);
       res.status(200).json(allMatches);
-
     } catch (error: any) {
-      console.error("🔥 EXPLOSIÓN EN EL CONTROLADOR DE MATCHMAKING:", error);
+      logger.error(`Error en matchmaking: ${error.message}`);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }
@@ -136,14 +132,14 @@ export class RoomieController {
   }
 
   public async checkSession(req: Request, res: Response): Promise<void> {
-    const { email } = (req as any).auth; 
+    const { email } = (req as any).auth;
     try {
       if (!email) {
         res.status(400).json({ status: "error", message: "El token JWT no contiene un email." });
         return;
       }
       const adapter = new SupabaseUserAdapter();
-      const userExists = await adapter.findByEmail(email); 
+      const userExists = await adapter.findByEmail(email);
       if (!userExists) {
         res.status(404).json({ status: "not_registered", message: "El usuario no existe en RoomieSmart." });
         return;
@@ -154,40 +150,26 @@ export class RoomieController {
     }
   }
 
-  // =================================================================
-  // 🔥 OBTENER PERFIL DEL USUARIO LOGUEADO (Con Logs de Diagnóstico)
-  // =================================================================
   public async getMe(req: Request, res: Response): Promise<void> {
     try {
-      console.log("\n📢 [FINANZAS 1/4] Petición GET recibida en /api/v1/identity/me");
-      
       const email = (req as any).auth?.email;
-      console.log(`📢 [FINANZAS 2/4] Email extraído del Token de Kinde: ${email || 'NINGUNO'}`);
-      
+
       if (!email) {
-        console.log("❌ Error: El token JWT no mandó ningún email.");
         res.status(400).json({ status: "error", message: "El token JWT no contiene un email." });
         return;
       }
 
-      console.log("📢 [FINANZAS 3/4] Buscando al usuario en Supabase...");
       const adapter = new SupabaseUserAdapter();
-      const user = await adapter.findByEmail(email); 
+      const user = await adapter.findByEmail(email);
 
       if (!user) {
-        console.log(`❌ Error: El correo ${email} no existe en la tabla de usuarios.`);
         res.status(404).json({ status: "not_registered", message: "Usuario no encontrado." });
         return;
       }
-      
+
       const userId = (user as any).id;
-      console.log(`✅ ¡Usuario encontrado! Su UUID es: ${userId}`);
-
-   
       const settings = await adapter.getProfileSettings(userId);
-      console.log(`📢 [FINANZAS 4/4] Presupuesto máximo del usuario: $${settings?.maxBudget || 250}`);
 
-     
       const { data: department } = await supabase
         .from('departments')
         .select('id')
@@ -210,13 +192,13 @@ export class RoomieController {
         }
       });
     } catch (error: any) {
-      console.error("🔥 EXPLOSIÓN EN EL CONTROLADOR GET ME:", error);
+      logger.error(`Error en getMe: ${error.message}`);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
   }
   public async initializeConversation(req: Request, res: Response): Promise<void> {
     try {
-    
+
       const { currentUserId, targetUserId } = req.body;
 
       if (!currentUserId || !targetUserId) {
@@ -261,7 +243,7 @@ export class RoomieController {
       const adapter = new SupabaseChatAdapter();
       const newMessage = await adapter.saveMessage(conversationId as string, senderId, content);
 
-   
+
       try {
         const { data: participants } = await supabase
           .from('conversation_participants')
@@ -304,16 +286,17 @@ export class RoomieController {
 
   public async createSpace(req: Request, res: Response): Promise<void> {
     try {
-  
+
       const { ownerId, ...payload } = req.body;
       const dto = plainToInstance(PublishSpaceDto, payload);
 
       const useCase = new PublishSpaceUseCase(new SupabaseSpaceAdapter());
       const newSpace = await useCase.execute(ownerId, dto);
 
+      cacheDelete(SPACES_CACHE_KEY);
       res.status(201).json(newSpace);
     } catch (error: any) {
-   
+
       console.error('🚨 Error crítico publicando:', error);
       logger.error(`Error publicando espacio: ${error.message}`);
 
@@ -345,13 +328,87 @@ export class RoomieController {
 
   public async listSpaces(_req: Request, res: Response): Promise<void> {
     try {
+
+
+
+      const cached = cacheGet<any[]>(SPACES_CACHE_KEY);
+      if (cached) {
+        res.setHeader('Cache-Control', 'public, max-age=60');
+        res.setHeader('X-Cache', 'HIT');
+        res.status(200).json({ data: cached });
+        return;
+      }
+
       const useCase = new ListSpacesUseCase(new SupabaseSpaceAdapter());
       const spaces = await useCase.execute();
+      cacheSet(SPACES_CACHE_KEY, spaces, SPACES_CACHE_TTL_MS);
+
+      res.setHeader('Cache-Control', 'public, max-age=60');
+      res.setHeader('X-Cache', 'MISS');
       res.status(200).json({ data: spaces });
     } catch (error: any) {
       logger.error(`Error listando espacios: ${error.message}`);
       res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
     }
+  }
+
+  public async listUserDepartments(req: Request, res: Response): Promise<void> {
+    try {
+      const rawId = req.params.userId;
+      const userId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+      if (!userId) {
+        res.status(400).json({ error: 'BAD_REQUEST', message: 'Falta userId' });
+        return;
+      }
+
+      const useCase = new ListUserDepartmentsUseCase(new SupabaseSpaceAdapter());
+      const departments = await useCase.execute(userId);
+
+      res.status(200).json({ data: departments });
+    } catch (error: any) {
+      logger.error(`Error listando departamentos del usuario: ${error.message}`);
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+
+
+
+
+  private async serveCatalog(
+    res: Response,
+    key: 'cities' | 'common-areas' | 'amenities',
+    fetcher: () => Promise<any[]>
+  ): Promise<void> {
+    try {
+      const cacheKey = `catalog:${key}`;
+      let items = cacheGet<any[]>(cacheKey);
+      if (!items) {
+        items = await fetcher();
+        cacheSet(cacheKey, items, CATALOG_CACHE_TTL_MS);
+      }
+      res.setHeader('Cache-Control', 'public, max-age=600');
+      res.status(200).json({ data: items });
+    } catch (error: any) {
+      logger.error(`Error cargando catálogo ${key}: ${error.message}`);
+      res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message: error.message });
+    }
+  }
+
+  public async getCities(_req: Request, res: Response): Promise<void> {
+    const adapter = new SupabaseCatalogAdapter();
+    await this.serveCatalog(res, 'cities', () => adapter.listCities());
+  }
+
+  public async getCommonAreas(_req: Request, res: Response): Promise<void> {
+    const adapter = new SupabaseCatalogAdapter();
+    await this.serveCatalog(res, 'common-areas', () => adapter.listCommonAreas());
+  }
+
+  public async getAmenities(_req: Request, res: Response): Promise<void> {
+    const adapter = new SupabaseCatalogAdapter();
+    await this.serveCatalog(res, 'amenities', () => adapter.listAmenities());
   }
 
 
@@ -388,6 +445,7 @@ export class RoomieController {
       const useCase = new UpdateSpaceUseCase(new SupabaseSpaceAdapter());
       const updated = await useCase.execute(req.params.id as string, requesterId, dto);
 
+      cacheDelete(SPACES_CACHE_KEY);
       res.status(200).json(updated);
     } catch (error: any) {
       console.error('🚨 Error editando espacio:', error);
@@ -425,7 +483,8 @@ export class RoomieController {
       const useCase = new RequestToJoinUseCase(
         new SupabaseMembershipAdapter(),
         new SupabaseSpaceAdapter(),
-        new SupabaseNotificationAdapter()
+        new SupabaseNotificationAdapter(),
+        new NodemailerEmailAdapter()
       );
       const request = await useCase.execute(req.params.id as string, dto);
       res.status(201).json(request);
@@ -463,7 +522,8 @@ export class RoomieController {
       const useCase = new ResolveJoinRequestUseCase(
         new SupabaseMembershipAdapter(),
         new SupabaseSpaceAdapter(),
-        new SupabaseNotificationAdapter()
+        new SupabaseNotificationAdapter(),
+        new NodemailerEmailAdapter()
       );
       const resolved = await useCase.execute(req.params.id as string, dto);
       res.status(200).json(resolved);
@@ -505,6 +565,7 @@ export class RoomieController {
       const useCase = new UnpublishSpaceUseCase(new SupabaseSpaceAdapter());
       await useCase.execute(req.params.id as string, requesterId);
 
+      cacheDelete(SPACES_CACHE_KEY);
       res.status(200).json({ message: 'Publicación dada de baja correctamente.' });
     } catch (error: any) {
       console.error('🚨 Error dando de baja espacio:', error);

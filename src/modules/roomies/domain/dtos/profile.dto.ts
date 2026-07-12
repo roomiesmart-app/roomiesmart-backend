@@ -23,9 +23,9 @@ export class ProfileDto {
   @Max(2000, { message: 'El presupuesto máximo es irreal.' })
   maxBudget?: number;
 
-  // method to validate the relationship between minBudget and maxBudget, ensuring that minBudget is not greater than maxBudget. This is a business rule that we want to enforce in addition to the individual field validations provided by class-validator.
+
   public validate() {
-  
+
     if (this.minBudget && this.maxBudget && this.minBudget > this.maxBudget) {
       throw new Error('El presupuesto mínimo no puede ser mayor al máximo.');
     }

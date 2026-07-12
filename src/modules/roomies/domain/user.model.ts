@@ -1,7 +1,7 @@
-// ============================================================================
-// VALUE OBJECTS (Domain Interfaces)
-// In DDD, these define the strict structure of our business data.
-// ============================================================================
+
+
+
+
 
 export interface UserProfileDomain {
   age: number;
@@ -41,9 +41,9 @@ export interface UserPreferences {
   financial?: FinancialDomain;
 }
 
-// ============================================================================
-// ENTITY (The Main Domain Entity)
-// ============================================================================
+
+
+
 
 export class User {
   private constructor(
@@ -51,7 +51,7 @@ export class User {
     public name: string,
     public email: string,
     public password_hash: string,
-    public preferences: UserPreferences, 
+    public preferences: UserPreferences,
     public ai_embedding: number[] | null,
     public readonly created_at: Date
   ) {}
@@ -60,7 +60,7 @@ export class User {
     name: string,
     email: string,
     password_hash: string,
-    preferences: UserPreferences = {}, // Initialize with an empty object that fulfills the interface
+    preferences: UserPreferences = {},
     id: string | null = null,
     ai_embedding: number[] | null = null,
     created_at: Date = new Date()
@@ -74,7 +74,7 @@ export class User {
     return this.password_hash;
   }
 
-  // The unbreakable rules of our business (Invariants)
+
   private validate(): void {
     if (!this.name || this.name.trim().length < 2) {
       throw new Error('Domain Error: El nombre debe tener al menos 2 caracteres.');

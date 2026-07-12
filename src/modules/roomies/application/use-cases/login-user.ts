@@ -22,7 +22,7 @@ export class LoginUserUseCase {
       throw new Error('Auth Error: Credenciales inválidas.');
     }
 
-    // Sign JWT token
+
     const secretKey = process.env.JWT_SECRET || 'firma_secreta_para_desarrollo_roomiesmart';
     const token = jwt.sign(
       { userId: user.id, email: user.email },
