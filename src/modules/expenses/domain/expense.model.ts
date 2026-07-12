@@ -5,6 +5,8 @@ export interface ExpenseModel {
   payerId: string;
   amount: number;
   description: string;
+  // Usuarios entre quienes se divide el gasto; undefined = todos los miembros
+  participants?: string[];
   expenseDate?: Date;
   createdAt?: Date;
 

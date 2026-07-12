@@ -7,13 +7,16 @@ export class LogExpenseUseCase {
   constructor(private readonly expenseRepository: IExpenseRepository) {}
 
   public async execute(dto: RegisterExpenseDto): Promise<ExpenseModel> {
-
+    const participants = dto.participants?.length
+      ? [...new Set(dto.participants)]
+      : undefined;
 
     return await this.expenseRepository.saveExpense({
       departmentId: dto.departmentId,
       payerId: dto.payerId,
       amount: dto.amount,
-      description: dto.description
+      description: dto.description,
+      ...(participants ? { participants } : {})
     });
   }
 }

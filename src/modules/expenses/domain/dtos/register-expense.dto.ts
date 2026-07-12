@@ -1,4 +1,13 @@
-import { IsUUID, IsNumber, IsString, Min, IsNotEmpty } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  IsString,
+  Min,
+  IsNotEmpty,
+  IsOptional,
+  IsArray,
+  ArrayMinSize,
+} from 'class-validator';
 
 export class RegisterExpenseDto {
   @IsUUID('4', { message: 'El ID del departamento debe ser un UUID válido' })
@@ -16,4 +25,10 @@ export class RegisterExpenseDto {
   @IsString()
   @IsNotEmpty({ message: 'La descripción es obligatoria' })
   description!: string;
+
+  @IsOptional()
+  @IsArray({ message: 'Los participantes deben ser una lista de IDs' })
+  @ArrayMinSize(1, { message: 'Debe haber al menos un participante' })
+  @IsUUID('4', { each: true, message: 'Cada participante debe ser un UUID válido' })
+  participants?: string[];
 }
