@@ -42,6 +42,11 @@ router.get(
   roomieController.listSpaces.bind(roomieController)
 );
 
+router.get(
+  '/api/v1/roomies/users/:userId/departments',
+  roomieController.listUserDepartments.bind(roomieController)
+);
+
 
 router.post(
   '/api/v1/roomies/spaces/:id/requests',
