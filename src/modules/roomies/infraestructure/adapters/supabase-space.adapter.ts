@@ -38,6 +38,18 @@ export class SupabaseSpaceAdapter implements ISpaceRepository {
       );
     }
 
+    // El dueño también es miembro del departamento (finanzas, listado por usuario)
+    const { error: memberError } = await supabase
+      .from('department_members')
+      .insert({ department_id: data.id, user_id: data.owner_id, role: 'owner' });
+
+    if (memberError && memberError.code !== '23505') {
+      console.error(
+        '⚠️ No se pudo registrar al dueño como miembro:',
+        memberError.message
+      );
+    }
+
     return data;
   }
 
@@ -50,6 +62,51 @@ export class SupabaseSpaceAdapter implements ISpaceRepository {
 
     if (error) throw new Error(error.message);
     return data || [];
+  }
+
+  public async findByUser(userId: string): Promise<any[]> {
+    // Espacios donde es dueño
+    const { data: owned, error: ownedError } = await supabase
+      .from(SPACES_TABLE)
+      .select('*')
+      .eq('owner_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (ownedError) throw new Error(ownedError.message);
+
+    // Departamentos donde figura como miembro
+    const { data: memberships, error: membershipError } = await supabase
+      .from('department_members')
+      .select('department_id')
+      .eq('user_id', userId);
+
+    if (membershipError) throw new Error(membershipError.message);
+
+    const ownedIds = new Set((owned ?? []).map((s: any) => s.id));
+    const memberDeptIds = [
+      ...new Set(
+        (memberships ?? [])
+          .map((m: any) => m.department_id)
+          .filter((id: string) => !ownedIds.has(id))
+      ),
+    ];
+
+    let memberSpaces: any[] = [];
+    if (memberDeptIds.length > 0) {
+      const { data, error } = await supabase
+        .from(SPACES_TABLE)
+        .select('*')
+        .in('id', memberDeptIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw new Error(error.message);
+      memberSpaces = data ?? [];
+    }
+
+    return [
+      ...(owned ?? []).map((space: any) => ({ ...space, membership_role: 'owner' })),
+      ...memberSpaces.map((space: any) => ({ ...space, membership_role: 'member' })),
+    ];
   }
 
   public async findById(spaceId: string): Promise<any | null> {
